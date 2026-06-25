@@ -65,7 +65,7 @@ export default function MetasPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-8 py-8">
+    <div className="flex flex-col gap-4 px-4 py-6 sm:px-8 sm:py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-foreground">Metas Cuantificables</h1>
         <Button size="sm" onClick={() => setDialogAbierto(true)}>
@@ -74,7 +74,7 @@ export default function MetasPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {metas.map((meta) => {
           const tendencia = calcularTendenciaMeta(meta);
           const pct = Math.min(100, Math.round((meta.valorActual / meta.valorObjetivo) * 100));

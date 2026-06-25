@@ -4,6 +4,10 @@ import { useState } from "react";
 
 import type { RevisionMensual } from "@/types/direccion";
 import { useDireccionStore } from "@/stores/direccion-store";
+import { useIdentidadStore } from "@/stores/identidad-store";
+import { useFinanzasStore } from "@/stores/finanzas-store";
+import { calcularProgresoObjetivo } from "@/lib/direccion";
+import { mesDe, sumarGastosDelMes, sumarIngresosDelMes } from "@/lib/finanzas";
 import { getHoyISO } from "@/lib/hoy";
 
 function mesActualLabel(): string {
@@ -14,6 +18,11 @@ function mesActualLabel(): string {
 export default function RevisionMensualPage() {
   const revisiones = useDireccionStore((s) => s.revisionesMensuales);
   const agregarRevisionMensual = useDireccionStore((s) => s.agregarRevisionMensual);
+  const objetivos = useDireccionStore((s) => s.objetivos);
+  const indiceConsistenciaHabitos = useIdentidadStore((s) => s.indiceConsistenciaGlobal());
+  const ingresos = useFinanzasStore((s) => s.ingresos);
+  const gastos = useFinanzasStore((s) => s.gastos);
+  const objetivosFinancieros = useFinanzasStore((s) => s.objetivos);
   const [editando, setEditando] = useState(false);
 
   const [queFunciono, setQueFunciono] = useState("");
@@ -27,19 +36,43 @@ export default function RevisionMensualPage() {
   const [objetivosPrincipales, setObjetivosPrincipales] = useState("");
   const [queNecesitasDiferente, setQueNecesitasDiferente] = useState("");
 
+  function calcularResultadosDelMes() {
+    const hoy = getHoyISO();
+    const mes = mesDe(hoy);
+    const activos = objetivos.filter((o) => o.estado === "Activo");
+    const conProgreso = activos
+      .map((o) => ({ o, progreso: calcularProgresoObjetivo(o.id, objetivos) }))
+      .sort((a, b) => b.progreso - a.progreso);
+
+    const ingresosMes = sumarIngresosDelMes(ingresos, mes);
+    const gastosMes = sumarGastosDelMes(gastos, mes);
+    const target = objetivosFinancieros.ingresoMensualTarget;
+    const ahorroMes = ingresosMes - gastosMes;
+
+    return {
+      objetivosCumplidos: objetivos.filter((o) => o.estado === "Cumplido").map((o) => o.titulo),
+      objetivosNoCumplidos: objetivos
+        .filter((o) => o.estado === "Pospuesto" || o.estado === "Abandonado")
+        .map((o) => o.titulo),
+      queAvanzo: conProgreso[0]
+        ? `"${conProgreso[0].o.titulo}" (${conProgreso[0].progreso}% de avance)`
+        : "Sin objetivos activos este mes.",
+      queSeEstanco: conProgreso.length > 1 && conProgreso[conProgreso.length - 1].progreso < 50
+        ? `"${conProgreso[conProgreso.length - 1].o.titulo}" (${conProgreso[conProgreso.length - 1].progreso}% de avance)`
+        : "Sin estancamientos relevantes este mes.",
+      indiceConsistenciaHabitos: Math.round(indiceConsistenciaHabitos),
+      ingresosVsObjetivo: target > 0
+        ? `$${ingresosMes.toLocaleString("es-AR")} de $${target.toLocaleString("es-AR")} (${Math.round((ingresosMes / target) * 100)}%)`
+        : `$${ingresosMes.toLocaleString("es-AR")} ingresados, sin objetivo mensual definido.`,
+      gastosVsPresupuesto: `Gastaste $${gastosMes.toLocaleString("es-AR")} este mes, ahorrando $${ahorroMes.toLocaleString("es-AR")} (objetivo de ahorro: $${objetivosFinancieros.ahorroMensualTarget.toLocaleString("es-AR")}).`,
+    };
+  }
+
   function guardar() {
     const revision: RevisionMensual = {
       id: `rm-${Date.now()}`,
       mes: getHoyISO().slice(0, 7),
-      resultados: {
-        objetivosCumplidos: [],
-        objetivosNoCumplidos: [],
-        queAvanzo: "",
-        queSeEstanco: "",
-        indiceConsistenciaHabitos: 0,
-        ingresosVsObjetivo: "",
-        gastosVsPresupuesto: "",
-      },
+      resultados: calcularResultadosDelMes(),
       aprendizajes: { queFunciono, queNoFunciono, queCambiarias, queDescubriste },
       ajusteDeCurso: { objetivosAModificar, habitosAAjustar, prioridadesQueCambiaron },
       intencionProximoMes: {
@@ -54,7 +87,7 @@ export default function RevisionMensualPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-10 px-8 py-10">
+    <div className="mx-auto flex max-w-2xl flex-col gap-10 px-4 py-6 sm:px-8 sm:py-10">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold capitalize text-foreground">Revisión Mensual — {mesActualLabel()}</h1>
         {!editando && (
@@ -69,6 +102,10 @@ export default function RevisionMensualPage() {
 
       {editando && (
         <div className="flex flex-col gap-8 rounded-lg border border-border bg-card p-6">
+          <Bloque titulo="Resultados del mes (calculado automáticamente)">
+            <ResultadosAuto resultados={calcularResultadosDelMes()} />
+          </Bloque>
+
           <Bloque titulo="Aprendizajes">
             <Campo label="¿Qué funcionó este mes?" value={queFunciono} onChange={setQueFunciono} />
             <Campo label="¿Qué no funcionó?" value={queNoFunciono} onChange={setQueNoFunciono} />
@@ -142,6 +179,20 @@ export default function RevisionMensualPage() {
           </article>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ResultadosAuto({ resultados }: { resultados: RevisionMensual["resultados"] }) {
+  return (
+    <div className="flex flex-col gap-1.5 text-sm text-text-secondary">
+      <p><b>Avanzó:</b> {resultados.queAvanzo}</p>
+      <p><b>Se estancó:</b> {resultados.queSeEstanco}</p>
+      <p><b>Objetivos cumplidos:</b> {resultados.objetivosCumplidos.join(", ") || "—"}</p>
+      <p><b>Objetivos no cumplidos:</b> {resultados.objetivosNoCumplidos.join(", ") || "—"}</p>
+      <p><b>Consistencia de hábitos:</b> {resultados.indiceConsistenciaHabitos}%</p>
+      <p><b>Ingresos vs objetivo:</b> {resultados.ingresosVsObjetivo}</p>
+      <p><b>Gastos:</b> {resultados.gastosVsPresupuesto}</p>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import type { EstadoTarea } from "@/types/accion";
 import { COLUMNAS_KANBAN } from "@/types/accion";
 import { useAccionStore } from "@/stores/accion-store";
+import { useDireccionStore } from "@/stores/direccion-store";
 import { TareaCardKanban } from "@/components/accion/tarea-card-kanban";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { camposTarea, valoresATarea } from "@/components/accion/campos-tarea";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 export default function KanbanPage() {
   const todasLasTareas = useAccionStore((s) => s.tareas);
   const proyectos = useAccionStore((s) => s.proyectos);
+  const objetivos = useDireccionStore((s) => s.objetivos);
   const moverEstadoStore = useAccionStore((s) => s.moverEstado);
   const agregarTarea = useAccionStore((s) => s.agregarTarea);
   const tareas = useMemo(() => todasLasTareas.filter((t) => !t.bandeja), [todasLasTareas]);
@@ -32,8 +34,12 @@ export default function KanbanPage() {
   );
 
   const CAMPOS = useMemo(
-    () => camposTarea(proyectos.map((p) => ({ value: p.id, label: p.nombre }))),
-    [proyectos]
+    () =>
+      camposTarea(
+        proyectos.map((p) => ({ value: p.id, label: p.nombre })),
+        objetivos.map((o) => ({ value: o.id, label: o.titulo }))
+      ),
+    [proyectos, objetivos]
   );
 
   const filtradas = tareas.filter(
@@ -64,7 +70,7 @@ export default function KanbanPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-5 px-8 py-8">
+    <div className="flex h-full flex-col gap-5 px-4 py-6 sm:px-8 sm:py-8">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-foreground">Kanban</h1>
 
@@ -116,7 +122,7 @@ export default function KanbanPage() {
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-4 gap-4 overflow-y-auto">
+      <div className="flex flex-1 gap-4 overflow-x-auto overflow-y-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible">
         {COLUMNAS_KANBAN.map((col) => {
           const itemsCol = filtradas.filter((t) => t.estado === col.id);
           return (
@@ -128,7 +134,7 @@ export default function KanbanPage() {
                 setArrastrandoId(null);
               }}
               className={cn(
-                "flex flex-col gap-3 rounded-lg border border-border bg-popover/40 p-3"
+                "flex w-[78vw] shrink-0 flex-col gap-3 rounded-lg border border-border bg-popover/40 p-3 sm:w-auto sm:shrink"
               )}
             >
               <div className="flex items-center justify-between px-1">

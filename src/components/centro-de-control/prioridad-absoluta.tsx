@@ -23,6 +23,7 @@ export function PrioridadAbsoluta({
   const horas = Math.floor(prioridad.tiempoEstimadoMin / 60);
   const minutos = prioridad.tiempoEstimadoMin % 60;
   const tiempo = `${horas > 0 ? `${horas}h ` : ""}${minutos > 0 ? `${minutos}min` : ""}`.trim();
+  const detalles = [prioridad.proyecto, prioridad.objetivo, prioridad.area].filter(Boolean);
 
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-card p-7 shadow-md">
@@ -40,18 +41,23 @@ export function PrioridadAbsoluta({
         {prioridad.titulo}
       </h2>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
-        <span>{prioridad.proyecto}</span>
-        <span className="text-text-muted">·</span>
-        <span>{prioridad.objetivo}</span>
-        <span className="text-text-muted">·</span>
-        <span>{prioridad.area}</span>
-      </div>
+      {detalles.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+          {detalles.map((d, i) => (
+            <span key={d} className="flex items-center gap-2">
+              {i > 0 && <span className="text-text-muted">·</span>}
+              {d}
+            </span>
+          ))}
+        </div>
+      )}
 
-      <div className="flex items-center gap-1.5 text-sm text-text-secondary">
-        <Clock className="size-3.5" />
-        {tiempo} estimadas
-      </div>
+      {prioridad.tiempoEstimadoMin > 0 && (
+        <div className="flex items-center gap-1.5 text-sm text-text-secondary">
+          <Clock className="size-3.5" />
+          {tiempo} estimadas
+        </div>
+      )}
 
       <div className="mt-3 flex items-center gap-3">
         <Button size="lg" onClick={onComenzar}>

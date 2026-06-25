@@ -87,7 +87,7 @@ export default function PlanSemanalPage() {
 
   if (!iniciado) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-8 py-10">
+      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
         <div className="flex flex-col gap-2">
           <h1 className="text-lg font-semibold text-foreground">Plan Semanal</h1>
           <p className="text-sm text-text-secondary">
@@ -123,7 +123,7 @@ export default function PlanSemanalPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8 px-8 py-10">
+    <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
       <div className="flex items-center gap-2">
         {PASOS.map((p, i) => (
           <div key={p} className="flex flex-1 items-center gap-2">

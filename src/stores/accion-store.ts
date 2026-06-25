@@ -1,12 +1,17 @@
 import { create } from "zustand";
 
-import type { Archivo, EstadoTarea, Proyecto, Tarea } from "@/types/accion";
-import { proyectos as proyectosIniciales, tareas as tareasIniciales } from "@/lib/mock/accion";
+import type { Archivo, EstadoTarea, EventoCalendario, Proyecto, Tarea } from "@/types/accion";
+import {
+  eventosCalendario as eventosCalendarioIniciales,
+  proyectos as proyectosIniciales,
+  tareas as tareasIniciales,
+} from "@/lib/mock/accion";
 
 type AccionStore = {
   tareas: Tarea[];
   proyectos: Proyecto[];
   archivos: Archivo[];
+  eventosCalendario: EventoCalendario[];
   agregarTarea: (tarea: Tarea) => void;
   agregarProyecto: (proyecto: Proyecto) => void;
   actualizarProyecto: (id: string, cambios: Partial<Proyecto>) => void;
@@ -18,12 +23,15 @@ type AccionStore = {
   registrarTiempo: (id: string, minutos: number) => void;
   agregarArchivo: (archivo: Archivo) => void;
   eliminarArchivo: (id: string) => void;
+  agregarEvento: (evento: EventoCalendario) => void;
+  eliminarEvento: (id: string) => void;
 };
 
 export const useAccionStore = create<AccionStore>((set) => ({
   tareas: tareasIniciales,
   proyectos: proyectosIniciales,
   archivos: [],
+  eventosCalendario: eventosCalendarioIniciales,
 
   agregarTarea: (tarea) =>
     set((state) => ({ tareas: [...state.tareas, tarea] })),
@@ -76,4 +84,12 @@ export const useAccionStore = create<AccionStore>((set) => ({
 
   eliminarArchivo: (id) =>
     set((state) => ({ archivos: state.archivos.filter((a) => a.id !== id) })),
+
+  agregarEvento: (evento) =>
+    set((state) => ({ eventosCalendario: [...state.eventosCalendario, evento] })),
+
+  eliminarEvento: (id) =>
+    set((state) => ({
+      eventosCalendario: state.eventosCalendario.filter((e) => e.id !== id),
+    })),
 }));

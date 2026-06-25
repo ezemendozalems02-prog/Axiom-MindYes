@@ -28,7 +28,7 @@ export default function ObjetivoDetallePage() {
 
   const objetivo = objetivos.find((o) => o.id === params.id);
   if (!objetivo) {
-    return <div className="px-8 py-10 text-sm text-text-secondary">Objetivo no encontrado.</div>;
+    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-sm text-text-secondary">Objetivo no encontrado.</div>;
   }
 
   const padre = objetivos.find((o) => o.id === objetivo.objetivoPadreId);
@@ -59,7 +59,7 @@ export default function ObjetivoDetallePage() {
   ];
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-8 py-10">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <button
         onClick={() => router.push("/direccion/objetivos")}
         className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"
@@ -101,7 +101,7 @@ export default function ObjetivoDetallePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
           <span className="text-xs uppercase tracking-wide text-text-muted">Motivación</span>
           <p className="text-sm text-foreground">{objetivo.motivacion || "—"}</p>

@@ -38,7 +38,7 @@ export default function InsightsPage() {
   const { indices, niveles } = useMotorInteligencia();
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 px-8 py-10">
+    <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Insights</h1>
         <p className="text-sm text-text-secondary">
@@ -46,7 +46,7 @@ export default function InsightsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-5 gap-3 rounded-lg border border-border bg-card p-5">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-card p-5 sm:grid-cols-5">
         {ETIQUETAS_INDICE.map(({ key, label }) => (
           <div key={key} className="flex flex-col gap-1">
             <span className="text-xs text-text-muted">{label}</span>

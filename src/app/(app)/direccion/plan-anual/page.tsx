@@ -2,6 +2,7 @@
 
 import { useDireccionStore } from "@/stores/direccion-store";
 import { planAnual } from "@/lib/mock/direccion";
+import { getHoyISO } from "@/lib/hoy";
 
 const NOMBRES_MES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -16,9 +17,10 @@ const CARGA_COLOR: Record<string, string> = {
 
 export default function PlanAnualPage() {
   const objetivos = useDireccionStore((s) => s.objetivos);
+  const mesActual = Number(getHoyISO().slice(5, 7));
 
   return (
-    <div className="flex flex-col gap-6 px-8 py-8">
+    <div className="flex flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-foreground">Plan Anual {planAnual.anio}</h1>
         <div className="flex gap-3 text-xs text-text-muted">
@@ -30,10 +32,10 @@ export default function PlanAnualPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {planAnual.meses.map((m) => {
           const objetivosDelMes = objetivos.filter((o) => m.objetivosIds.includes(o.id));
-          const esActual = m.mes === 6;
+          const esActual = m.mes === mesActual;
           return (
             <div
               key={m.mes}

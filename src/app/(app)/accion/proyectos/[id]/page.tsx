@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, FileText, History, NotebookText, BarChart3, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 
-import type { Proyecto } from "@/types/accion";
 import { useAccionStore } from "@/stores/accion-store";
 import { useMenteStore } from "@/stores/mente-store";
+import { useNegocioStore } from "@/stores/negocio-store";
+import { useDireccionStore } from "@/stores/direccion-store";
 import { TareaRow } from "@/components/accion/tarea-row";
 import { calcularProgresoProyecto, formatFechaCorta, formatMinutos } from "@/lib/accion-format";
 import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 import { camposTarea, valoresATarea } from "@/components/accion/campos-tarea";
+import { camposProyecto, valoresAProyecto } from "@/components/accion/campos-proyecto";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getHoyISO } from "@/lib/hoy";
 
 const CAMPOS_NOTA: CampoForm[] = [
@@ -26,14 +29,6 @@ const CAMPOS_ARCHIVO: CampoForm[] = [
 ];
 
 const TABS = ["Tareas", "Notas", "Archivos", "Cronología", "Métricas"] as const;
-
-const CAMPOS: CampoForm[] = [
-  { key: "nombre", label: "Nombre", type: "text" },
-  { key: "area", label: "Área de vida", type: "text" },
-  { key: "cliente", label: "Cliente (opcional)", type: "text" },
-  { key: "fechaLimite", label: "Fecha límite", type: "date" },
-  { key: "estado", label: "Estado", type: "select", opciones: ["en_curso", "pausado", "completado"] },
-];
 
 export default function ProyectoDetallePage() {
   const params = useParams<{ id: string }>();
@@ -50,7 +45,21 @@ export default function ProyectoDetallePage() {
   const notas = useMenteStore((s) => s.notas);
   const agregarNota = useMenteStore((s) => s.agregarNota);
   const eliminarNota = useMenteStore((s) => s.eliminarNota);
+  const clientes = useNegocioStore((s) => s.clientes);
+  const objetivos = useDireccionStore((s) => s.objetivos);
   const proyecto = proyectos.find((p) => p.id === params.id);
+
+  const clientesOpciones = useMemo(
+    () => clientes.map((c) => ({ value: c.id, label: c.nombre })),
+    [clientes]
+  );
+  const objetivosOpciones = useMemo(
+    () => objetivos.map((o) => ({ value: o.id, label: o.titulo })),
+    [objetivos]
+  );
+  const clienteAsociado = clientes.find((c) => c.id === proyecto?.clienteId);
+  const CAMPOS = useMemo(() => camposProyecto(clientesOpciones), [clientesOpciones]);
+  const CAMPOS_TAREA = useMemo(() => camposTarea(undefined, objetivosOpciones), [objetivosOpciones]);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Tareas");
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [dialogTareaAbierto, setDialogTareaAbierto] = useState(false);
@@ -60,7 +69,7 @@ export default function ProyectoDetallePage() {
 
   if (!proyecto) {
     return (
-      <div className="px-8 py-10 text-sm text-text-secondary">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 text-sm text-text-secondary">
         Proyecto no encontrado.
       </div>
     );
@@ -113,7 +122,7 @@ export default function ProyectoDetallePage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-8 py-10">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <Link
         href="/accion/proyectos"
         className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"
@@ -126,6 +135,15 @@ export default function ProyectoDetallePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold text-foreground">{proyecto.nombre}</h1>
+            <Badge
+              className={
+                proyecto.tipo === "Cliente"
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-text-secondary"
+              }
+            >
+              {proyecto.tipo}
+            </Badge>
             <button
               onClick={() => setDialogAbierto(true)}
               className="text-text-muted hover:text-foreground"
@@ -144,10 +162,10 @@ export default function ProyectoDetallePage() {
         </div>
         <div className="flex items-center gap-3 text-xs text-text-secondary">
           <span>{proyecto.area}</span>
-          {proyecto.cliente && (
+          {clienteAsociado && (
             <>
               <span className="text-text-muted">·</span>
-              <span>{proyecto.cliente}</span>
+              <span>{clienteAsociado.nombre}</span>
             </>
           )}
           {proyecto.fechaLimite && (
@@ -296,7 +314,7 @@ export default function ProyectoDetallePage() {
       )}
 
       {tab === "Métricas" && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
             <span className="text-xs text-text-muted uppercase tracking-wide">
               Tareas completadas
@@ -331,15 +349,7 @@ export default function ProyectoDetallePage() {
         title="Editar proyecto"
         campos={CAMPOS}
         datosIniciales={proyecto}
-        onGuardar={(valores) =>
-          actualizarProyecto(proyecto.id, {
-            nombre: String(valores.nombre),
-            area: String(valores.area),
-            cliente: valores.cliente ? String(valores.cliente) : undefined,
-            fechaLimite: (valores.fechaLimite as string) || null,
-            estado: valores.estado as Proyecto["estado"],
-          })
-        }
+        onGuardar={(valores) => actualizarProyecto(proyecto.id, valoresAProyecto(valores))}
         onEliminar={() => {
           eliminarProyecto(proyecto.id);
           router.push("/accion/proyectos");
@@ -351,7 +361,7 @@ export default function ProyectoDetallePage() {
         open={dialogTareaAbierto}
         onOpenChange={setDialogTareaAbierto}
         title={`Nueva tarea en ${proyecto.nombre}`}
-        campos={camposTarea()}
+        campos={CAMPOS_TAREA}
         datosIniciales={{ area: proyecto.area, prioridad: "Media", impacto: "Medio", urgencia: "Normal", energia: "Media" }}
         onGuardar={guardarNuevaTarea}
         submitLabel="Crear tarea"

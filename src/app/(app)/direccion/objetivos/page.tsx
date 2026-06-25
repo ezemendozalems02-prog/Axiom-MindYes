@@ -96,7 +96,7 @@ export default function ObjetivosPage() {
   const raices = raicesDe(objetivos);
 
   return (
-    <div className="flex flex-col gap-6 px-8 py-8">
+    <div className="flex flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
       <IndicadoresDireccion />
 
       <div className="flex items-center justify-between">
@@ -178,7 +178,7 @@ export default function ObjetivosPage() {
               <option value="fecha">Ordenar por fecha límite</option>
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filtrados.map((o) => (
               <ObjetivoCard key={o.id} objetivo={o} objetivos={objetivos} />
             ))}
@@ -209,7 +209,7 @@ export default function ObjetivosPage() {
       )}
 
       {vista === "Por Área" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {areasDeVida.map(({ nombre: area }) => {
             const deArea = objetivos.filter((o) => o.area === area);
             return (

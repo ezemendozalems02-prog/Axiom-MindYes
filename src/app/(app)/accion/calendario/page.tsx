@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 
-import { eventosCalendario, tareas } from "@/lib/mock/accion";
+import type { EventoCalendario, Tarea } from "@/types/accion";
+import { useAccionStore } from "@/stores/accion-store";
 import {
   CARGA_COLOR,
   HORA_FIN,
@@ -14,10 +15,20 @@ import {
   toISO,
 } from "@/lib/calendario";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
 type VistaCalendario = "diaria" | "semanal" | "mensual";
 
 const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+const CAMPOS_EVENTO: CampoForm[] = [
+  { key: "titulo", label: "Título", type: "text", placeholder: "Ej: Llamada con proveedor" },
+  { key: "fecha", label: "Fecha", type: "date" },
+  { key: "horaInicio", label: "Hora de inicio", type: "time" },
+  { key: "horaFin", label: "Hora de fin", type: "time" },
+  { key: "tipo", label: "Tipo", type: "select", opciones: ["evento", "bloque_foco"] },
+];
 
 function sumarDias(fecha: Date, dias: number) {
   const d = new Date(fecha);
@@ -25,15 +36,25 @@ function sumarDias(fecha: Date, dias: number) {
   return d;
 }
 
-function GrillaHoraria({ dias }: { dias: Date[] }) {
+function GrillaHoraria({
+  dias,
+  tareas,
+  eventosCalendario,
+  onEliminarEvento,
+}: {
+  dias: Date[];
+  tareas: Tarea[];
+  eventosCalendario: EventoCalendario[];
+  onEliminarEvento: (id: string) => void;
+}) {
   const horas = Array.from(
     { length: HORA_FIN - HORA_INICIO },
     (_, i) => HORA_INICIO + i
   );
 
   return (
-    <div className="flex flex-1 overflow-hidden rounded-lg border border-border">
-      <div className="flex w-14 flex-col border-r border-border bg-popover/40">
+    <div className="flex flex-1 overflow-x-auto overflow-y-hidden rounded-lg border border-border">
+      <div className="sticky left-0 z-10 flex w-14 shrink-0 flex-col border-r border-border bg-popover">
         <div className="h-10 border-b border-border" />
         {horas.map((h) => (
           <div
@@ -45,7 +66,10 @@ function GrillaHoraria({ dias }: { dias: Date[] }) {
         ))}
       </div>
 
-      <div className="grid flex-1 grid-cols-[repeat(var(--cols),1fr)]" style={{ "--cols": dias.length } as React.CSSProperties}>
+      <div
+        className="grid flex-1 grid-cols-[repeat(var(--cols),minmax(90px,1fr))]"
+        style={{ "--cols": dias.length } as React.CSSProperties}
+      >
         {dias.map((dia) => {
           const fechaISO = toISO(dia);
           const eventosDia = eventosCalendario.filter((e) => e.fecha === fechaISO);
@@ -80,13 +104,20 @@ function GrillaHoraria({ dias }: { dias: Date[] }) {
                       key={ev.id}
                       style={{ top, height }}
                       className={cn(
-                        "absolute inset-x-1 overflow-hidden rounded-md border px-2 py-1 text-xs",
+                        "group absolute inset-x-1 overflow-hidden rounded-md border px-2 py-1 text-xs",
                         ev.tipo === "bloque_foco"
                           ? "border-primary/40 bg-primary/15 text-primary"
                           : "border-border bg-card text-foreground"
                       )}
                     >
-                      <p className="truncate font-medium">{ev.titulo}</p>
+                      <button
+                        onClick={() => onEliminarEvento(ev.id)}
+                        aria-label="Eliminar evento"
+                        className="absolute right-1 top-1 hidden text-text-muted hover:text-destructive group-hover:block"
+                      >
+                        <X className="size-3" />
+                      </button>
+                      <p className="truncate pr-3 font-medium">{ev.titulo}</p>
                       <p className="truncate text-text-muted">
                         {ev.horaInicio}–{ev.horaFin}
                       </p>
@@ -102,19 +133,27 @@ function GrillaHoraria({ dias }: { dias: Date[] }) {
   );
 }
 
-function VistaMensual({ mes }: { mes: Date }) {
+function VistaMensual({
+  mes,
+  tareas,
+  eventosCalendario,
+}: {
+  mes: Date;
+  tareas: Tarea[];
+  eventosCalendario: EventoCalendario[];
+}) {
   const primerDiaMes = new Date(mes.getFullYear(), mes.getMonth(), 1);
   const inicioGrilla = getInicioSemana(primerDiaMes);
   const celdas = Array.from({ length: 42 }, (_, i) => sumarDias(inicioGrilla, i));
 
   return (
-    <div className="flex flex-1 flex-col gap-2">
-      <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-text-muted">
+    <div className="flex flex-1 flex-col gap-2 overflow-x-auto">
+      <div className="grid min-w-[640px] grid-cols-7 gap-2 text-center text-xs font-medium text-text-muted">
         {DIAS.map((d) => (
           <span key={d}>{d}</span>
         ))}
       </div>
-      <div className="grid flex-1 grid-cols-7 gap-2">
+      <div className="grid min-w-[640px] flex-1 grid-cols-7 gap-2">
         {celdas.map((dia) => {
           const fechaISO = toISO(dia);
           const enMes = dia.getMonth() === mes.getMonth();
@@ -124,7 +163,7 @@ function VistaMensual({ mes }: { mes: Date }) {
             <div
               key={fechaISO}
               className={cn(
-                "flex flex-col gap-1 rounded-md border border-border p-2",
+                "flex min-w-0 flex-col gap-1 rounded-md border border-border p-2",
                 !enMes && "opacity-40"
               )}
             >
@@ -150,8 +189,14 @@ function VistaMensual({ mes }: { mes: Date }) {
 }
 
 export default function CalendarioPage() {
+  const tareas = useAccionStore((s) => s.tareas);
+  const eventosCalendario = useAccionStore((s) => s.eventosCalendario);
+  const agregarEvento = useAccionStore((s) => s.agregarEvento);
+  const eliminarEvento = useAccionStore((s) => s.eliminarEvento);
+
   const [vista, setVista] = useState<VistaCalendario>("semanal");
   const [fechaRef, setFechaRef] = useState(() => new Date());
+  const [dialogAbierto, setDialogAbierto] = useState(false);
 
   const dias = useMemo(() => {
     if (vista === "diaria") return [fechaRef];
@@ -165,9 +210,20 @@ export default function CalendarioPage() {
     else setFechaRef((f) => new Date(f.getFullYear(), f.getMonth() + direccion, 1));
   }
 
+  function guardarEvento(valores: Record<string, unknown>) {
+    agregarEvento({
+      id: crypto.randomUUID(),
+      titulo: String(valores.titulo),
+      fecha: String(valores.fecha),
+      horaInicio: String(valores.horaInicio),
+      horaFin: String(valores.horaFin),
+      tipo: valores.tipo as EventoCalendario["tipo"],
+    });
+  }
+
   return (
-    <div className="flex h-full flex-col gap-4 px-8 py-8">
-      <div className="flex items-center gap-3">
+    <div className="flex h-full flex-col gap-4 px-4 py-6 sm:px-8 sm:py-8">
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-foreground">Calendario</h1>
 
         <div className="flex items-center gap-1">
@@ -190,7 +246,7 @@ export default function CalendarioPage() {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-1 rounded-md bg-secondary p-1">
+        <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
           {(["diaria", "semanal", "mensual"] as const).map((v) => (
             <button
               key={v}
@@ -206,13 +262,33 @@ export default function CalendarioPage() {
             </button>
           ))}
         </div>
+
+        <Button size="sm" className="ml-auto" onClick={() => setDialogAbierto(true)}>
+          <Plus data-icon="inline-start" />
+          Nuevo evento
+        </Button>
       </div>
 
       {vista === "mensual" ? (
-        <VistaMensual mes={fechaRef} />
+        <VistaMensual mes={fechaRef} tareas={tareas} eventosCalendario={eventosCalendario} />
       ) : (
-        <GrillaHoraria dias={dias} />
+        <GrillaHoraria
+          dias={dias}
+          tareas={tareas}
+          eventosCalendario={eventosCalendario}
+          onEliminarEvento={eliminarEvento}
+        />
       )}
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title="Nuevo evento"
+        campos={CAMPOS_EVENTO}
+        datosIniciales={{ fecha: toISO(fechaRef), tipo: "evento" }}
+        onGuardar={guardarEvento}
+        submitLabel="Crear evento"
+      />
     </div>
   );
 }

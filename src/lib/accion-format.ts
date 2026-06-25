@@ -27,6 +27,23 @@ export function formatFechaCorta(fecha: string | null) {
   return d.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
 }
 
+const PALETA_PROYECTO = [
+  "bg-primary/15 text-primary",
+  "bg-success/15 text-success",
+  "bg-warning/15 text-warning",
+  "bg-destructive/15 text-destructive",
+  "bg-purple-500/15 text-purple-400",
+  "bg-pink-500/15 text-pink-400",
+  "bg-cyan-500/15 text-cyan-400",
+];
+
+export function colorProyecto(proyectoId: string | null | undefined): string {
+  if (!proyectoId) return "bg-muted text-text-secondary";
+  let hash = 0;
+  for (let i = 0; i < proyectoId.length; i++) hash = (hash * 31 + proyectoId.charCodeAt(i)) >>> 0;
+  return PALETA_PROYECTO[hash % PALETA_PROYECTO.length];
+}
+
 export function calcularProgresoProyecto(proyectoId: string, tareas: Tarea[]): number {
   const delProyecto = tareas.filter((t) => t.proyectoId === proyectoId && !t.bandeja);
   if (delProyecto.length === 0) return 0;

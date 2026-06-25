@@ -44,7 +44,7 @@ export function calcularIndiceDireccion(objetivos: Objetivo[], tareas: Tarea[]):
   const dias = fechasUltimos7Dias();
   const conAvanceReciente = activos.filter((o) => {
     const tareasDelObjetivo = tareas.filter(
-      (t) => o.proyectosIds.includes(t.proyectoId ?? "") || t.objetivo === o.titulo
+      (t) => o.proyectosIds.includes(t.proyectoId ?? "") || t.objetivoId === o.id
     );
     return tareasDelObjetivo.some(
       (t) => t.estado === "completado" && t.fechaProgramada && dias.includes(t.fechaProgramada)
@@ -58,7 +58,7 @@ export function calcularAlineacion(objetivos: Objetivo[], tareas: Tarea[]): numb
   if (tareasSemana.length === 0) return 0;
   const proyectosConObjetivo = new Set(objetivos.flatMap((o) => o.proyectosIds));
   const rastreables = tareasSemana.filter(
-    (t) => (t.proyectoId && proyectosConObjetivo.has(t.proyectoId)) || Boolean(t.objetivo)
+    (t) => (t.proyectoId && proyectosConObjetivo.has(t.proyectoId)) || Boolean(t.objetivoId)
   );
   return Math.round((rastreables.length / tareasSemana.length) * 100);
 }

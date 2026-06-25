@@ -75,7 +75,7 @@ export default function PipelinePage() {
       : 0;
 
   return (
-    <div className="flex h-full flex-col gap-5 px-8 py-8">
+    <div className="flex h-full flex-col gap-5 px-4 py-6 sm:px-8 sm:py-8">
       <div className="flex flex-wrap items-center gap-6">
         <h1 className="text-2xl font-semibold text-foreground">Pipeline de Ventas</h1>
 
@@ -102,7 +102,7 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-5 gap-4 overflow-y-auto">
+      <div className="flex flex-1 gap-4 overflow-x-auto overflow-y-auto sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:overflow-x-visible">
         {COLUMNAS_PIPELINE.map((col) => {
           const itemsCol = oportunidades.filter((o) => o.estado === col.id);
           const totalCol = itemsCol.reduce((acc, o) => acc + o.valorEstimado, 0);
@@ -115,7 +115,7 @@ export default function PipelinePage() {
                 if (arrastrandoId) moverOportunidad(arrastrandoId, col.id);
                 setArrastrandoId(null);
               }}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-popover/40 p-3"
+              className="flex w-[78vw] shrink-0 flex-col gap-3 rounded-lg border border-border bg-popover/40 p-3 sm:w-auto sm:shrink"
             >
               <div className="flex flex-col gap-0.5 px-1">
                 <div className="flex items-center justify-between">

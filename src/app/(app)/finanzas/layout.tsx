@@ -26,7 +26,7 @@ export default function FinanzasLayout({
         <span className="text-sm font-medium text-foreground">Finanzas</span>
       </Topbar>
 
-      <div className="flex shrink-0 gap-1 border-b border-border px-5">
+      <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border px-5">
         {TABS.map((tab) => {
           const active = pathname?.startsWith(tab.href);
           return (
@@ -34,7 +34,7 @@ export default function FinanzasLayout({
               key={tab.href}
               href={tab.href}
               className={cn(
-                "relative px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-foreground",
+                "relative whitespace-nowrap px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-foreground",
                 active && "text-foreground"
               )}
             >

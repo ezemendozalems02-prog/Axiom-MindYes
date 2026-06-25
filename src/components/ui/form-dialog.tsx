@@ -21,6 +21,7 @@ export type CampoForm =
   | { key: string; label: string; type: "textarea"; placeholder?: string }
   | { key: string; label: string; type: "number"; placeholder?: string }
   | { key: string; label: string; type: "date" }
+  | { key: string; label: string; type: "time" }
   | { key: string; label: string; type: "select"; opciones: string[] }
   | { key: string; label: string; type: "select-ref"; opciones: OpcionRef[]; vacio?: string }
   | { key: string; label: string; type: "tags"; placeholder?: string }
@@ -181,7 +182,15 @@ export function FormDialog({
                 </div>
               ) : (
                 <Input
-                  type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"}
+                  type={
+                    c.type === "number"
+                      ? "number"
+                      : c.type === "date"
+                        ? "date"
+                        : c.type === "time"
+                          ? "time"
+                          : "text"
+                  }
                   value={(valores[c.key] as string) ?? ""}
                   onChange={(e) => set(c.key, e.target.value)}
                   placeholder={c.type === "text" || c.type === "number" ? c.placeholder : undefined}

@@ -1,7 +1,7 @@
 import type { CampoForm, OpcionRef } from "@/components/ui/form-dialog";
 import type { Etiqueta } from "@/types/accion";
 
-export function camposTarea(proyectosOpciones?: OpcionRef[]): CampoForm[] {
+export function camposTarea(proyectosOpciones?: OpcionRef[], objetivosOpciones?: OpcionRef[]): CampoForm[] {
   const campos: CampoForm[] = [
     { key: "titulo", label: "Título", type: "text" },
     { key: "descripcion", label: "Descripción", type: "textarea" },
@@ -19,6 +19,15 @@ export function camposTarea(proyectosOpciones?: OpcionRef[]): CampoForm[] {
       type: "select-ref",
       opciones: proyectosOpciones,
       vacio: "Sin proyecto",
+    });
+  }
+  if (objetivosOpciones) {
+    campos.push({
+      key: "objetivoId",
+      label: "Objetivo",
+      type: "select-ref",
+      opciones: objetivosOpciones,
+      vacio: "Sin objetivo",
     });
   }
   const ETIQUETAS = ["Alta Energía", "Trabajo Profundo", "Delegable", "Administrativo", "Creativo", "Estratégico"];
@@ -46,6 +55,7 @@ export function valoresATarea(valores: Record<string, unknown>) {
     energia: valores.energia as "Alta" | "Media" | "Baja",
     tiempoEstimadoMin: Number(valores.tiempoEstimadoMin) || 30,
     proyectoId: (valores.proyectoId as string) || null,
+    objetivoId: (valores.objetivoId as string) || null,
     fechaProgramada: (valores.fechaProgramada as string) || null,
     fechaLimite: (valores.fechaLimite as string) || null,
     etiquetas: ((valores.etiquetas as string[]) ?? []) as Etiqueta[],

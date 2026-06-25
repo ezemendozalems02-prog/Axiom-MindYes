@@ -15,7 +15,7 @@ export function IndicesInteligencia({ indices }: { indices: Indices }) {
   return (
     <Link
       href="/inteligencia"
-      className="flex items-center gap-x-8 gap-y-2 rounded-lg border border-border bg-card px-5 py-4 transition-colors hover:border-primary/30"
+      className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-border bg-card px-4 py-4 transition-colors hover:border-primary/30 sm:gap-x-8 sm:px-5"
     >
       <div className="flex items-center gap-1.5 text-text-secondary">
         <Brain className="size-3.5" />

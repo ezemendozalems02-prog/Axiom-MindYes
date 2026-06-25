@@ -6,7 +6,7 @@ import { Sparkles, ChevronDown } from "lucide-react";
 
 import type { Tarea } from "@/types/accion";
 import { useAccionStore } from "@/stores/accion-store";
-import { estadoGeneral } from "@/lib/mock/centro-de-control";
+import { useMotorInteligencia } from "@/hooks/use-motor-inteligencia";
 import { ordenarPorPrioridad } from "@/lib/priorizacion";
 import { getHoyISO } from "@/lib/hoy";
 import { TareaRow } from "@/components/accion/tarea-row";
@@ -29,6 +29,7 @@ export default function MiDiaPage() {
   const toggleCompletada = useAccionStore((s) => s.toggleCompletada);
   const registrarTiempo = useAccionStore((s) => s.registrarTiempo);
   const actualizarTarea = useAccionStore((s) => s.actualizarTarea);
+  const { indices } = useMotorInteligencia();
 
   const [orden, setOrden] = useState<string[]>([]);
   const [mostrarTodas, setMostrarTodas] = useState(false);
@@ -41,7 +42,7 @@ export default function MiDiaPage() {
   );
 
   useEffect(() => {
-    const energia = energiaDesdeIndice(estadoGeneral.foco);
+    const energia = energiaDesdeIndice(indices.ejecucion);
     const ordenadas = ordenarPorPrioridad(tareasDeHoy, energia, hoy);
     setOrden((prev) => {
       const idsActuales = new Set(tareasDeHoy.map((t) => t.id));
@@ -50,7 +51,7 @@ export default function MiDiaPage() {
       return conservado.length > 0 ? [...conservado, ...nuevos] : ordenadas.map((t) => t.id);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tareasDeHoy.length]);
+  }, [tareasDeHoy.length, indices.ejecucion]);
 
   const porId = useMemo(
     () => Object.fromEntries(tareasDeHoy.map((t) => [t.id, t])),
@@ -87,7 +88,7 @@ export default function MiDiaPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-8 py-10">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Mi Día</h1>
         <p className="text-sm text-text-secondary">

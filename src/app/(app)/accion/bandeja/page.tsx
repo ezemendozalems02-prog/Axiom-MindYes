@@ -74,7 +74,7 @@ function ProcesarItem({
       )}
 
       {paso === 1 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
               Prioridad
@@ -204,7 +204,7 @@ export default function BandejaPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-8 py-10">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Bandeja</h1>
         <p className="text-sm text-text-secondary">

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, History } from "lucide-react";
+import { ArrowLeft, History, Pencil } from "lucide-react";
 
 import { COLUMNAS_KANBAN } from "@/types/accion";
 import { useAccionStore } from "@/stores/accion-store";
@@ -12,19 +12,32 @@ import { useFinanzasStore } from "@/stores/finanzas-store";
 import { calcularProgresoProyecto, formatFechaCorta, formatMinutos } from "@/lib/accion-format";
 import { VALOR_HORA_USD } from "@/lib/finanzas";
 import { TareaCardKanban } from "@/components/accion/tarea-card-kanban";
+import { Badge } from "@/components/ui/badge";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { camposProyecto, valoresAProyecto } from "@/components/accion/campos-proyecto";
 
 const TABS = ["Resumen", "Tareas", "Cronología", "Rentabilidad"] as const;
 
 export default function ProyectoNegocioDetallePage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const proyectos = useAccionStore((s) => s.proyectos);
   const todasLasTareas = useAccionStore((s) => s.tareas);
   const moverEstado = useAccionStore((s) => s.moverEstado);
+  const actualizarProyecto = useAccionStore((s) => s.actualizarProyecto);
+  const eliminarProyecto = useAccionStore((s) => s.eliminarProyecto);
   const clientes = useNegocioStore((s) => s.clientes);
   const ingresos = useFinanzasStore((s) => s.ingresos);
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("Resumen");
   const [arrastrandoId, setArrastrandoId] = useState<string | null>(null);
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+
+  const clientesOpciones = useMemo(
+    () => clientes.map((c) => ({ value: c.id, label: c.nombre })),
+    [clientes]
+  );
+  const CAMPOS = useMemo(() => camposProyecto(clientesOpciones), [clientesOpciones]);
 
   const proyecto = proyectos.find((p) => p.id === params.id);
   const tareas = todasLasTareas.filter((t) => t.proyectoId === params.id);
@@ -32,7 +45,7 @@ export default function ProyectoNegocioDetallePage() {
 
   if (!proyecto) {
     return (
-      <div className="px-8 py-10 text-sm text-text-secondary">Proyecto no encontrado.</div>
+      <div className="px-4 py-6 sm:px-8 sm:py-10 text-sm text-text-secondary">Proyecto no encontrado.</div>
     );
   }
 
@@ -46,7 +59,7 @@ export default function ProyectoNegocioDetallePage() {
   const rentabilidad = Math.round(ingresosGenerados - costoTiempo);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-8 py-10">
+    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <Link
         href="/negocio/proyectos"
         className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"
@@ -57,7 +70,25 @@ export default function ProyectoNegocioDetallePage() {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-foreground">{proyecto.nombre}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-foreground">{proyecto.nombre}</h1>
+            <Badge
+              className={
+                proyecto.tipo === "Cliente"
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-text-secondary"
+              }
+            >
+              {proyecto.tipo}
+            </Badge>
+            <button
+              onClick={() => setDialogAbierto(true)}
+              className="text-text-muted hover:text-foreground"
+              aria-label="Editar proyecto"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          </div>
           <span className="text-sm text-text-secondary">{progreso}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -122,7 +153,7 @@ export default function ProyectoNegocioDetallePage() {
       )}
 
       {tab === "Tareas" && (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {COLUMNAS_KANBAN.map((col) => {
             const itemsCol = tareas.filter((t) => t.estado === col.id);
             return (
@@ -208,6 +239,20 @@ export default function ProyectoNegocioDetallePage() {
           </div>
         </div>
       )}
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title="Editar proyecto"
+        campos={CAMPOS}
+        datosIniciales={proyecto}
+        onGuardar={(valores) => actualizarProyecto(proyecto.id, valoresAProyecto(valores))}
+        onEliminar={() => {
+          eliminarProyecto(proyecto.id);
+          router.push("/negocio/proyectos");
+        }}
+        submitLabel="Guardar cambios"
+      />
     </div>
   );
 }

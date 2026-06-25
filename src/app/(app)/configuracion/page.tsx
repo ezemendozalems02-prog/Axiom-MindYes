@@ -67,7 +67,7 @@ export default function ConfiguracionPage() {
       </Topbar>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-xl flex-col gap-8 px-8 py-10">
+        <div className="mx-auto flex max-w-xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
             <div className="flex items-center gap-2">
               <User className="size-4 text-text-muted" />

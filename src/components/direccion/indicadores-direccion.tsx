@@ -25,7 +25,7 @@ export function IndicadoresDireccion() {
   const brechaMayor = brechas[0];
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Stat label="Índice de Dirección" valor={`${indiceDireccion}%`} detalle="objetivos activos con avance en 7 días" />
       <Stat label="Alineación" valor={`${alineacion}%`} detalle="tareas rastreables a un objetivo" />
       <Stat label="Consistencia estratégica" valor={`${consistencia}`} detalle="semanas seguidas con Plan Semanal" />

@@ -4,6 +4,7 @@ import { useAccionStore } from "@/stores/accion-store";
 import { useMenteStore } from "@/stores/mente-store";
 import { useNegocioStore } from "@/stores/negocio-store";
 import { useIdentidadStore } from "@/stores/identidad-store";
+import { useDireccionStore } from "@/stores/direccion-store";
 import { useMotorInteligencia } from "@/hooks/use-motor-inteligencia";
 
 export type ResultadoBusqueda = {
@@ -31,6 +32,7 @@ export function useResultadosBusqueda(query: string): Record<string, ResultadoBu
   const decisiones = useMenteStore((s) => s.decisiones);
   const clientes = useNegocioStore((s) => s.clientes);
   const revisiones = useIdentidadStore((s) => s.revisiones);
+  const objetivos = useDireccionStore((s) => s.objetivos);
   const { niveles } = useMotorInteligencia();
 
   return useMemo(() => {
@@ -69,15 +71,13 @@ export function useResultadosBusqueda(query: string): Record<string, ResultadoBu
         })
       );
 
-    const objetivosUnicos = Array.from(
-      new Set(tareas.map((t) => t.objetivo).filter((o): o is string => Boolean(o)))
-    );
-    objetivosUnicos.forEach((o, i) =>
+    objetivos.forEach((o) =>
       resultados.push({
-        id: `obj-${i}`,
+        id: o.id,
         tipo: "Objetivo",
-        titulo: o,
-        href: "/accion/mi-dia",
+        titulo: o.titulo,
+        subtitulo: o.nivel,
+        href: `/direccion/objetivos/${o.id}`,
       })
     );
 
@@ -143,5 +143,5 @@ export function useResultadosBusqueda(query: string): Record<string, ResultadoBu
       agrupados[r.tipo].push(r);
     });
     return agrupados;
-  }, [query, proyectos, clientes, tareas, ideas, notas, decisiones, niveles, revisiones]);
+  }, [query, proyectos, clientes, tareas, ideas, notas, decisiones, niveles, revisiones, objetivos]);
 }

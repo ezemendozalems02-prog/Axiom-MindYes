@@ -89,7 +89,7 @@ export default function VisionPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-16 px-8 py-20">
+    <div className="mx-auto flex max-w-2xl flex-col gap-16 px-4 py-10 sm:px-8 sm:py-20">
       <Campo
         label="Visión a 5–10 años"
         valor={vision.vision}

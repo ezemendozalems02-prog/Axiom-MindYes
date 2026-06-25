@@ -40,9 +40,8 @@ export type Tarea = {
   tiempoEstimadoMin: number;
   tiempoRealMin: number;
   proyectoId: string | null;
-  objetivo?: string;
+  objetivoId: string | null;
   area: string;
-  cliente?: string;
   etiquetas: Etiqueta[];
   dependenciasIds: string[];
   fechaLimite: string | null;
@@ -56,10 +55,13 @@ export type Tarea = {
 
 export type EstadoProyecto = "en_curso" | "pausado" | "completado";
 
+export type TipoProyecto = "Propio" | "Cliente";
+
 export type Proyecto = {
   id: string;
   nombre: string;
   area: string;
+  tipo: TipoProyecto;
   cliente?: string;
   clienteId?: string | null;
   progreso: number;

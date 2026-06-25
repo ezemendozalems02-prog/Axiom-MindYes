@@ -21,13 +21,13 @@ export default function RoadmapDetallePage() {
 
   const roadmap = roadmaps.find((r) => r.id === params.id);
   if (!roadmap) {
-    return <div className="px-8 py-10 text-sm text-text-secondary">Roadmap no encontrado.</div>;
+    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-sm text-text-secondary">Roadmap no encontrado.</div>;
   }
 
   const proyecto = proyectos.find((p) => p.id === roadmap.proyectoId);
 
   return (
-    <div className="flex flex-col gap-6 px-8 py-10">
+    <div className="flex flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <button
         onClick={() => router.push("/direccion/roadmaps")}
         className="flex w-fit items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"
