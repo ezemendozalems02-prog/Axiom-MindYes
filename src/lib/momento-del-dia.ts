@@ -34,7 +34,7 @@ export function getFrasePersonalizada(momento: MomentoDelDia): string {
 }
 
 export const ORDEN_BLOQUES: Record<MomentoDelDia, string[]> = {
-  mañana: ["estado", "prioridad", "resumen", "areas", "progreso", "inteligencia"],
-  tarde: ["prioridad", "resumen", "progreso", "areas", "estado", "inteligencia"],
-  noche: ["resumen", "inteligencia", "progreso", "areas", "prioridad", "estado"],
+  mañana: ["estado", "indices", "prioridad", "resumen", "areas", "progreso", "inteligencia"],
+  tarde: ["prioridad", "resumen", "progreso", "areas", "indices", "estado", "inteligencia"],
+  noche: ["resumen", "inteligencia", "indices", "progreso", "areas", "prioridad", "estado"],
 };

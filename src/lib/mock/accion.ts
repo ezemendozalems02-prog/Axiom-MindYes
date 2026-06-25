@@ -6,6 +6,7 @@ export const proyectos: Proyecto[] = [
     nombre: "Opus Webs",
     area: "Negocio",
     cliente: "Cliente X",
+    clienteId: "c1",
     progreso: 67,
     fechaLimite: "2026-07-10",
     estado: "en_curso",

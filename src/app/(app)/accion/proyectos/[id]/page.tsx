@@ -7,7 +7,7 @@ import Link from "next/link";
 
 import { useAccionStore } from "@/stores/accion-store";
 import { TareaRow } from "@/components/accion/tarea-row";
-import { formatFechaCorta, formatMinutos } from "@/lib/accion-format";
+import { calcularProgresoProyecto, formatFechaCorta, formatMinutos } from "@/lib/accion-format";
 
 const TABS = ["Tareas", "Notas", "Archivos", "Cronología", "Métricas"] as const;
 
@@ -30,6 +30,7 @@ export default function ProyectoDetallePage() {
 
   const completadas = tareas.filter((t) => t.estado === "completado").length;
   const tiempoInvertido = tareas.reduce((acc, t) => acc + t.tiempoRealMin, 0);
+  const progreso = calcularProgresoProyecto(proyecto.id, todasLasTareas);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-8 py-10">
@@ -44,12 +45,12 @@ export default function ProyectoDetallePage() {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-foreground">{proyecto.nombre}</h1>
-          <span className="text-sm text-text-secondary">{proyecto.progreso}%</span>
+          <span className="text-sm text-text-secondary">{progreso}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
           <div
             className="h-full rounded-full bg-primary"
-            style={{ width: `${proyecto.progreso}%` }}
+            style={{ width: `${progreso}%` }}
           />
         </div>
         <div className="flex items-center gap-3 text-xs text-text-secondary">
@@ -161,7 +162,7 @@ export default function ProyectoDetallePage() {
             </span>
             <span className="text-2xl font-semibold text-foreground">
               <BarChart3 className="mr-1 inline size-4 text-primary" />
-              {proyecto.progreso}%
+              {progreso}%
             </span>
           </div>
         </div>

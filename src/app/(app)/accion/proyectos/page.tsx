@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import { useAccionStore } from "@/stores/accion-store";
-import { formatFechaCorta } from "@/lib/accion-format";
+import { calcularProgresoProyecto, formatFechaCorta } from "@/lib/accion-format";
 
 export default function ProyectosPage() {
   const proyectos = useAccionStore((s) => s.proyectos);
@@ -26,6 +26,7 @@ export default function ProyectosPage() {
           const tareasProyecto = tareas.filter((t) => t.proyectoId === p.id);
           const proximaTarea = tareasProyecto.find((t) => t.estado !== "completado");
           const fechaLimite = formatFechaCorta(p.fechaLimite);
+          const progreso = calcularProgresoProyecto(p.id, tareas);
 
           return (
             <Link
@@ -50,10 +51,10 @@ export default function ProyectosPage() {
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
                   <div
                     className="h-full rounded-full bg-primary"
-                    style={{ width: `${p.progreso}%` }}
+                    style={{ width: `${progreso}%` }}
                   />
                 </div>
-                <span className="text-sm text-text-secondary">{p.progreso}%</span>
+                <span className="text-sm text-text-secondary">{progreso}%</span>
               </div>
 
               <div className="flex items-center justify-between text-xs text-text-secondary">

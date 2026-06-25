@@ -61,6 +61,7 @@ export type Proyecto = {
   nombre: string;
   area: string;
   cliente?: string;
+  clienteId?: string | null;
   progreso: number;
   fechaLimite: string | null;
   estado: EstadoProyecto;

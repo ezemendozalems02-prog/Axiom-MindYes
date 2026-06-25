@@ -7,6 +7,7 @@ import type { Revision, TipoRevision } from "@/types/identidad";
 import type { Tarea } from "@/types/accion";
 import { useIdentidadStore } from "@/stores/identidad-store";
 import { useAccionStore } from "@/stores/accion-store";
+import { useGenerarAnalisisSemanal } from "@/hooks/use-generar-analisis-semanal";
 import { getHoyISO, getMananaISO } from "@/lib/hoy";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,7 @@ export default function RevisionesPage() {
   const revisiones = useIdentidadStore((s) => s.revisiones);
   const agregarRevision = useIdentidadStore((s) => s.agregarRevision);
   const agregarTarea = useAccionStore((s) => s.agregarTarea);
+  const generarAnalisisSemanal = useGenerarAnalisisSemanal();
 
   const [tipo, setTipo] = useState<TipoRevision>("diaria");
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
@@ -107,6 +109,13 @@ export default function RevisionesPage() {
           `${pendientes.length} pendiente(s) agregados a Mi Día de mañana.`
         );
       }
+    }
+
+    if (tipo === "semanal") {
+      generarAnalisisSemanal();
+      setConfirmacion(
+        "Análisis semanal generado a partir de tu revisión. Disponible en el módulo Inteligencia."
+      );
     }
 
     setRespuestas({});

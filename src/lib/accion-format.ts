@@ -1,4 +1,4 @@
-import type { Energia, Prioridad } from "@/types/accion";
+import type { Energia, Prioridad, Tarea } from "@/types/accion";
 
 export const PRIORIDAD_COLOR: Record<Prioridad, string> = {
   Crítica: "bg-destructive/15 text-destructive",
@@ -25,4 +25,11 @@ export function formatFechaCorta(fecha: string | null) {
   if (!fecha) return null;
   const d = new Date(fecha + "T00:00:00");
   return d.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+}
+
+export function calcularProgresoProyecto(proyectoId: string, tareas: Tarea[]): number {
+  const delProyecto = tareas.filter((t) => t.proyectoId === proyectoId && !t.bandeja);
+  if (delProyecto.length === 0) return 0;
+  const completadas = delProyecto.filter((t) => t.estado === "completado").length;
+  return Math.round((completadas / delProyecto.length) * 100);
 }

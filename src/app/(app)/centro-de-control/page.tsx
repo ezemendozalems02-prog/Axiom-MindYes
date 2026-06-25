@@ -11,6 +11,7 @@ import { ResumenDelDia } from "@/components/centro-de-control/resumen-del-dia";
 import { AreasDeVida } from "@/components/centro-de-control/areas-de-vida";
 import { Progreso } from "@/components/centro-de-control/progreso";
 import { InteligenciaDelDia } from "@/components/centro-de-control/inteligencia-del-dia";
+import { IndicesInteligencia } from "@/components/centro-de-control/indices-inteligencia";
 import { ModoFoco } from "@/components/centro-de-control/modo-foco";
 import {
   getFechaLarga,
@@ -20,7 +21,6 @@ import {
   ORDEN_BLOQUES,
 } from "@/lib/momento-del-dia";
 import {
-  areasDeVida,
   estadoGeneral,
   insights,
   prioridadAbsoluta,
@@ -31,6 +31,8 @@ import {
 import type { MomentoDelDia } from "@/types/centro-de-control";
 import { useIdentidadStore } from "@/stores/identidad-store";
 import { calcularRachaActual } from "@/lib/habitos";
+import { useAreasDeVidaConectadas } from "@/hooks/use-areas-de-vida";
+import { useMotorInteligencia } from "@/hooks/use-motor-inteligencia";
 
 export default function CentroDeControlPage() {
   const [mounted, setMounted] = useState(false);
@@ -40,7 +42,8 @@ export default function CentroDeControlPage() {
   const habitosIdentidad = useIdentidadStore((s) => s.habitos);
   const estadoHoyHabitos = useIdentidadStore((s) => s.estadoHoy);
   const marcarHabito = useIdentidadStore((s) => s.marcarHabito);
-  const indiceConsistencia = useIdentidadStore((s) => s.indiceConsistenciaGlobal());
+  const areasConConsistencia = useAreasDeVidaConectadas();
+  const { indices } = useMotorInteligencia();
 
   useEffect(() => {
     setMomento(getMomentoDelDia());
@@ -59,17 +62,6 @@ export default function CentroDeControlPage() {
     completadoHoy: (estadoHoyHabitos[h.id] ?? "pendiente") === "completado",
     racha: calcularRachaActual(h, estadoHoyHabitos[h.id]),
   }));
-
-  const areasConConsistencia = areasDeVida.map((area) =>
-    area.id === "aprendizaje"
-      ? {
-          ...area,
-          indice: indiceConsistencia,
-          observacion: `Índice de Consistencia en vivo, desde tus hábitos en Identidad.`,
-          actualizado: "Ahora",
-        }
-      : area
-  );
 
   const bloques: Record<string, React.ReactNode> = {
     estado: (
@@ -99,6 +91,7 @@ export default function CentroDeControlPage() {
     areas: <AreasDeVida key="areas" areas={areasConConsistencia} />,
     progreso: <Progreso key="progreso" progreso={progreso} />,
     inteligencia: <InteligenciaDelDia key="inteligencia" insights={insights} />,
+    indices: <IndicesInteligencia key="indices" indices={indices} />,
   };
 
   return (
