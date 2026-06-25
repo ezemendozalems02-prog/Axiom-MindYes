@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, X, Flame } from "lucide-react";
+import { Check, X, Flame, Pencil } from "lucide-react";
 
 import type { EstadoHabitoDia, Habito } from "@/types/identidad";
 import { Heatmap } from "@/components/identidad/heatmap";
@@ -12,20 +12,33 @@ export function HabitoCard({
   habito,
   estado,
   onMarcar,
+  onEditar,
 }: {
   habito: Habito;
   estado: EstadoHabitoDia;
   onMarcar: (estado: EstadoHabitoDia) => void;
+  onEditar?: () => void;
 }) {
   const racha = calcularRachaActual(habito, estado);
   const consistencia = calcularConsistencia4Semanas(habito, estado);
   const dias = generarHeatmap30Dias(habito, estado);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+    <div className="group flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-foreground">{habito.nombre}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium text-foreground">{habito.nombre}</span>
+            {onEditar && (
+              <button
+                onClick={onEditar}
+                className="text-text-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+                aria-label="Editar hábito"
+              >
+                <Pencil className="size-3" />
+              </button>
+            )}
+          </div>
           <span className="text-xs text-text-muted">
             {habito.area} · {habito.horario}
           </span>

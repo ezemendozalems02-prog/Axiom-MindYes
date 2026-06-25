@@ -1,13 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Check, ChevronDown, ListPlus, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ListPlus, Sparkles, Plus, Pencil } from "lucide-react";
 
+import type { Decision } from "@/types/mente";
 import { useMenteStore } from "@/stores/mente-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 import { cn } from "@/lib/utils";
 import { getHoyISO } from "@/lib/hoy";
+
+const CAMPOS: CampoForm[] = [
+  { key: "problema", label: "¿Qué hay que decidir?", type: "textarea" },
+  { key: "impacto", label: "Impacto", type: "select", opciones: ["Alto", "Medio", "Bajo"] },
+  { key: "costoRiesgo", label: "Costo / riesgo", type: "text" },
+  { key: "fechaLimite", label: "Fecha límite (opcional)", type: "date" },
+];
 
 const IMPACTO_COLOR: Record<string, string> = {
   Alto: "bg-warning/15 text-warning",
@@ -37,10 +46,45 @@ export default function DecisionesPage() {
     (s) => s.generarTareasDeImplementacion
   );
 
+  const agregarDecision = useMenteStore((s) => s.agregarDecision);
+  const actualizarDecision = useMenteStore((s) => s.actualizarDecision);
+
   const [expandidaId, setExpandidaId] = useState<string | null>(null);
   const [resultadoTexto, setResultadoTexto] = useState<Record<string, string>>({});
   const [tareasTexto, setTareasTexto] = useState<Record<string, string>>({});
   const [confirmacion, setConfirmacion] = useState<string | null>(null);
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+  const [editando, setEditando] = useState<Decision | null>(null);
+
+  function abrirNueva() {
+    setEditando(null);
+    setDialogAbierto(true);
+  }
+
+  function abrirEditar(d: Decision) {
+    setEditando(d);
+    setDialogAbierto(true);
+  }
+
+  function guardar(valores: Record<string, unknown>) {
+    const datos = {
+      problema: String(valores.problema),
+      impacto: valores.impacto as Decision["impacto"],
+      costoRiesgo: String(valores.costoRiesgo),
+      fechaLimite: (valores.fechaLimite as string) || null,
+    };
+    if (editando) {
+      actualizarDecision(editando.id, datos);
+    } else {
+      agregarDecision({
+        id: crypto.randomUUID(),
+        ...datos,
+        opciones: [],
+        estado: "Abierta",
+        creadaEn: getHoyISO(),
+      });
+    }
+  }
 
   const abiertas = decisiones.filter((d) => d.estado === "Abierta" || d.estado === "En análisis");
   const resueltas = decisiones.filter((d) => d.estado === "Tomada" || d.estado === "Descartada");
@@ -71,11 +115,17 @@ export default function DecisionesPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 px-8 py-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">Decisiones</h1>
-        <p className="text-sm text-text-secondary">
-          Las personas no procrastinan tareas. Procrastinan decisiones.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-foreground">Decisiones</h1>
+          <p className="text-sm text-text-secondary">
+            Las personas no procrastinan tareas. Procrastinan decisiones.
+          </p>
+        </div>
+        <Button size="sm" onClick={abrirNueva}>
+          <Plus data-icon="inline-start" />
+          Nueva Decisión
+        </Button>
       </div>
 
       {confirmacion && (
@@ -95,13 +145,28 @@ export default function DecisionesPage() {
           const expandida = expandidaId === decision.id;
           return (
             <div key={decision.id} className="rounded-lg border border-border bg-card">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setExpandidaId(expandida ? null : decision.id)}
-                className="flex w-full items-center gap-3 px-5 py-4 text-left"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setExpandidaId(expandida ? null : decision.id);
+                }}
+                className="flex w-full cursor-pointer items-center gap-3 px-5 py-4 text-left"
               >
                 <span className="flex-1 text-sm font-medium text-foreground">
                   {decision.problema}
                 </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    abrirEditar(decision);
+                  }}
+                  className="text-text-muted hover:text-foreground"
+                  aria-label="Editar decisión"
+                >
+                  <Pencil className="size-3" />
+                </button>
                 <Badge className={cn(IMPACTO_COLOR[decision.impacto])}>
                   Impacto {decision.impacto}
                 </Badge>
@@ -117,7 +182,7 @@ export default function DecisionesPage() {
                     expandida && "rotate-180"
                   )}
                 />
-              </button>
+              </div>
 
               {expandida && (
                 <div className="flex flex-col gap-4 border-t border-border px-5 py-4">
@@ -225,6 +290,16 @@ export default function DecisionesPage() {
           ))}
         </div>
       )}
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title={editando ? "Editar decisión" : "Nueva decisión"}
+        campos={CAMPOS}
+        datosIniciales={editando ?? undefined}
+        onGuardar={guardar}
+        submitLabel={editando ? "Guardar cambios" : "Crear decisión"}
+      />
     </div>
   );
 }

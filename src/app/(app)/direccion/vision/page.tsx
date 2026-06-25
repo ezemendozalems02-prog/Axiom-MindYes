@@ -11,11 +11,13 @@ function Campo({
   valor,
   onGuardar,
   multilinea = false,
+  placeholder,
 }: {
   label: string;
   valor: string;
   onGuardar: (v: string) => void;
   multilinea?: boolean;
+  placeholder?: string;
 }) {
   const [editando, setEditando] = useState(false);
   const [borrador, setBorrador] = useState(valor);
@@ -37,7 +39,8 @@ function Campo({
             value={borrador}
             onChange={(e) => setBorrador(e.target.value)}
             rows={multilinea ? 6 : 2}
-            className="border-none bg-transparent px-0 text-2xl leading-relaxed text-foreground shadow-none focus-visible:ring-0"
+            placeholder={placeholder}
+            className="border-none bg-transparent px-0 text-2xl leading-relaxed text-foreground shadow-none placeholder:text-text-muted/60 focus-visible:ring-0"
           />
           <button
             onClick={guardar}
@@ -55,7 +58,13 @@ function Campo({
           }}
           className="flex items-start gap-2 text-left"
         >
-          <span className="text-2xl font-light leading-relaxed text-foreground">{valor}</span>
+          <span
+            className={`text-2xl font-light leading-relaxed ${
+              valor ? "text-foreground" : "text-text-muted/60"
+            }`}
+          >
+            {valor || placeholder}
+          </span>
           <Pencil className="mt-2 size-3.5 shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
       )}
@@ -85,6 +94,7 @@ export default function VisionPage() {
         label="Visión a 5–10 años"
         valor={vision.vision}
         multilinea
+        placeholder="Ej: En los próximos 10 años quiero haber construido algo que me dé libertad de tiempo real, no solo libertad financiera…"
         onGuardar={(v) => actualizarVision({ vision: v })}
       />
 
@@ -116,6 +126,7 @@ export default function VisionPage() {
       <Campo
         label="Propósito declarado"
         valor={vision.proposito}
+        placeholder="Ej: Construir cosas que funcionen bien y le devuelvan tiempo a la gente."
         onGuardar={(v) => actualizarVision({ proposito: v })}
       />
 
@@ -123,6 +134,7 @@ export default function VisionPage() {
         label="Identidad futura"
         valor={vision.identidadFutura}
         multilinea
+        placeholder="Ej: En 10 años seré alguien que…"
         onGuardar={(v) => actualizarVision({ identidadFutura: v })}
       />
 

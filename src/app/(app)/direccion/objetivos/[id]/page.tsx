@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 
+import { NIVELES_OBJETIVO, type Objetivo } from "@/types/direccion";
 import { useDireccionStore } from "@/stores/direccion-store";
 import { useAccionStore } from "@/stores/accion-store";
 import { useIdentidadStore } from "@/stores/identidad-store";
@@ -11,15 +13,18 @@ import { calcularProgresoObjetivo, hijosDe } from "@/lib/direccion";
 import { calcularProgresoProyecto } from "@/lib/accion-format";
 import { ObjetivoCard } from "@/components/direccion/objetivo-card";
 import { Badge } from "@/components/ui/badge";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
 export default function ObjetivoDetallePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const objetivos = useDireccionStore((s) => s.objetivos);
   const actualizarObjetivo = useDireccionStore((s) => s.actualizarObjetivo);
+  const eliminarObjetivo = useDireccionStore((s) => s.eliminarObjetivo);
   const proyectos = useAccionStore((s) => s.proyectos);
   const tareas = useAccionStore((s) => s.tareas);
   const habitos = useIdentidadStore((s) => s.habitos);
+  const [dialogAbierto, setDialogAbierto] = useState(false);
 
   const objetivo = objetivos.find((o) => o.id === params.id);
   if (!objetivo) {
@@ -31,6 +36,27 @@ export default function ObjetivoDetallePage() {
   const progreso = calcularProgresoObjetivo(objetivo.id, objetivos);
   const proyectosRelacionados = proyectos.filter((p) => objetivo.proyectosIds.includes(p.id));
   const habitosRelacionados = habitos.filter((h) => objetivo.habitosIds.includes(h.id));
+
+  const CAMPOS: CampoForm[] = [
+    { key: "titulo", label: "Título", type: "text" },
+    { key: "descripcion", label: "Descripción", type: "textarea" },
+    { key: "nivel", label: "Nivel", type: "select", opciones: NIVELES_OBJETIVO },
+    { key: "area", label: "Área de vida", type: "text" },
+    {
+      key: "proyectosIds",
+      label: "Proyectos relacionados",
+      type: "checklist",
+      opciones: proyectos.map((p) => ({ value: p.id, label: p.nombre })),
+    },
+    {
+      key: "habitosIds",
+      label: "Hábitos que lo impulsan",
+      type: "checklist",
+      opciones: habitos.map((h) => ({ value: h.id, label: h.nombre })),
+    },
+    { key: "fechaLimite", label: "Fecha límite", type: "date" },
+    { key: "motivacion", label: "Motivación", type: "textarea" },
+  ];
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-8 py-10">
@@ -56,7 +82,16 @@ export default function ObjetivoDetallePage() {
           <Badge variant="outline">{objetivo.nivel}</Badge>
           <Badge variant="secondary">{objetivo.area}</Badge>
         </div>
-        <h1 className="text-2xl font-semibold text-foreground">{objetivo.titulo}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-foreground">{objetivo.titulo}</h1>
+          <button
+            onClick={() => setDialogAbierto(true)}
+            className="text-text-muted hover:text-foreground"
+            aria-label="Editar objetivo"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        </div>
         <p className="text-sm text-text-secondary">{objetivo.descripcion}</p>
         <div className="flex items-center gap-2">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
@@ -151,6 +186,31 @@ export default function ObjetivoDetallePage() {
           ))}
         </div>
       )}
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title="Editar objetivo"
+        campos={CAMPOS}
+        datosIniciales={objetivo}
+        onGuardar={(valores) =>
+          actualizarObjetivo(objetivo.id, {
+            titulo: String(valores.titulo),
+            descripcion: String(valores.descripcion),
+            nivel: valores.nivel as Objetivo["nivel"],
+            area: String(valores.area),
+            proyectosIds: valores.proyectosIds as string[],
+            habitosIds: valores.habitosIds as string[],
+            fechaLimite: (valores.fechaLimite as string) || null,
+            motivacion: String(valores.motivacion),
+          })
+        }
+        onEliminar={() => {
+          eliminarObjetivo(objetivo.id);
+          router.push("/direccion/objetivos");
+        }}
+        submitLabel="Guardar cambios"
+      />
     </div>
   );
 }

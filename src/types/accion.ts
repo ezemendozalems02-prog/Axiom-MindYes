@@ -67,6 +67,14 @@ export type Proyecto = {
   estado: EstadoProyecto;
 };
 
+export type Archivo = {
+  id: string;
+  proyectoId: string;
+  nombre: string;
+  tipo: string;
+  agregadoEn: string;
+};
+
 export type EventoCalendario = {
   id: string;
   titulo: string;

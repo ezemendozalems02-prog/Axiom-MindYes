@@ -17,6 +17,12 @@ type IdentidadStore = {
   agregarRevision: (revision: Revision) => void;
   reordenarRutina: (rutinaId: string, habitoIds: string[]) => void;
   indiceConsistenciaGlobal: () => number;
+  agregarHabito: (habito: Habito) => void;
+  actualizarHabito: (id: string, cambios: Partial<Habito>) => void;
+  eliminarHabito: (id: string) => void;
+  agregarRutina: (rutina: Rutina) => void;
+  actualizarRutina: (id: string, cambios: Partial<Rutina>) => void;
+  eliminarRutina: (id: string) => void;
 };
 
 export const useIdentidadStore = create<IdentidadStore>((set, get) => ({
@@ -65,4 +71,32 @@ export const useIdentidadStore = create<IdentidadStore>((set, get) => ({
       ) / habitos.length;
     return Math.round(promedio);
   },
+
+  agregarHabito: (habito) =>
+    set((state) => ({ habitos: [...state.habitos, habito] })),
+
+  actualizarHabito: (id, cambios) =>
+    set((state) => ({
+      habitos: state.habitos.map((h) => (h.id === id ? { ...h, ...cambios } : h)),
+    })),
+
+  eliminarHabito: (id) =>
+    set((state) => ({
+      habitos: state.habitos.filter((h) => h.id !== id),
+      rutinas: state.rutinas.map((r) => ({
+        ...r,
+        habitoIds: r.habitoIds.filter((hid) => hid !== id),
+      })),
+    })),
+
+  agregarRutina: (rutina) =>
+    set((state) => ({ rutinas: [...state.rutinas, rutina] })),
+
+  actualizarRutina: (id, cambios) =>
+    set((state) => ({
+      rutinas: state.rutinas.map((r) => (r.id === id ? { ...r, ...cambios } : r)),
+    })),
+
+  eliminarRutina: (id) =>
+    set((state) => ({ rutinas: state.rutinas.filter((r) => r.id !== id) })),
 }));

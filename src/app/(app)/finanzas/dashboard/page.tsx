@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Pencil } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -21,6 +23,12 @@ import {
   sumarGastosDelMes,
   sumarIngresosDelMes,
 } from "@/lib/finanzas";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
+
+const CAMPOS_PATRIMONIO: CampoForm[] = [
+  { key: "activos", label: "Activos (USD)", type: "number" },
+  { key: "deudas", label: "Deudas (USD)", type: "number" },
+];
 
 const COLORES_DONUT = [
   "var(--color-primary)",
@@ -35,6 +43,8 @@ export default function DashboardFinancieroPage() {
   const gastos = useFinanzasStore((s) => s.gastos);
   const objetivos = useFinanzasStore((s) => s.objetivos);
   const patrimonio = useFinanzasStore((s) => s.patrimonio);
+  const actualizarPatrimonio = useFinanzasStore((s) => s.actualizarPatrimonio);
+  const [dialogPatrimonioAbierto, setDialogPatrimonioAbierto] = useState(false);
 
   const mesActual = mesDe(getHoyISO());
   const mesPrevio = mesAnterior(mesActual);
@@ -78,9 +88,18 @@ export default function DashboardFinancieroPage() {
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
-          <span className="text-xs text-text-muted uppercase tracking-wide">
-            Patrimonio neto
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-text-muted uppercase tracking-wide">
+              Patrimonio neto
+            </span>
+            <button
+              onClick={() => setDialogPatrimonioAbierto(true)}
+              className="text-text-muted hover:text-foreground"
+              aria-label="Editar patrimonio"
+            >
+              <Pencil className="size-3" />
+            </button>
+          </div>
           <span className="text-2xl font-semibold text-foreground">
             ${patrimonioNeto.toLocaleString("es-AR")}
           </span>
@@ -189,6 +208,21 @@ export default function DashboardFinancieroPage() {
           </div>
         </div>
       </div>
+
+      <FormDialog
+        open={dialogPatrimonioAbierto}
+        onOpenChange={setDialogPatrimonioAbierto}
+        title="Editar patrimonio"
+        campos={CAMPOS_PATRIMONIO}
+        datosIniciales={patrimonio}
+        onGuardar={(valores) =>
+          actualizarPatrimonio({
+            activos: Number(valores.activos) || 0,
+            deudas: Number(valores.deudas) || 0,
+          })
+        }
+        submitLabel="Guardar cambios"
+      />
     </div>
   );
 }

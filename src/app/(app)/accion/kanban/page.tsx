@@ -3,10 +3,13 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
-import type { EstadoTarea, Tarea } from "@/types/accion";
+import type { EstadoTarea } from "@/types/accion";
 import { COLUMNAS_KANBAN } from "@/types/accion";
 import { useAccionStore } from "@/stores/accion-store";
 import { TareaCardKanban } from "@/components/accion/tarea-card-kanban";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { camposTarea, valoresATarea } from "@/components/accion/campos-tarea";
+import { getHoyISO } from "@/lib/hoy";
 import { cn } from "@/lib/utils";
 
 export default function KanbanPage() {
@@ -21,11 +24,16 @@ export default function KanbanPage() {
   const [filtroProyecto, setFiltroProyecto] = useState<string>("");
   const [filtroPrioridad, setFiltroPrioridad] = useState<string>("");
   const [filtroEnergia, setFiltroEnergia] = useState<string>("");
-  const [nuevoTexto, setNuevoTexto] = useState<Record<string, string>>({});
+  const [columnaNueva, setColumnaNueva] = useState<EstadoTarea | null>(null);
 
   const proyectoPorId = useMemo(
     () => Object.fromEntries(proyectos.map((p) => [p.id, p.nombre])),
     []
+  );
+
+  const CAMPOS = useMemo(
+    () => camposTarea(proyectos.map((p) => ({ value: p.id, label: p.nombre }))),
+    [proyectos]
   );
 
   const filtradas = tareas.filter(
@@ -40,32 +48,19 @@ export default function KanbanPage() {
     moverEstadoStore(id, estado);
   }
 
-  function crearTarea(estado: EstadoTarea) {
-    const texto = (nuevoTexto[estado] ?? "").trim();
-    if (!texto) return;
-    const nueva: Tarea = {
+  function guardarNuevaTarea(valores: Record<string, unknown>) {
+    if (!columnaNueva) return;
+    agregarTarea({
       id: crypto.randomUUID(),
-      titulo: texto,
-      estado,
-      prioridad: "Media",
-      impacto: "Medio",
-      urgencia: "Normal",
-      energia: "Media",
-      tiempoEstimadoMin: 30,
+      ...valoresATarea(valores),
+      estado: columnaNueva,
       tiempoRealMin: 0,
-      proyectoId: null,
-      area: filtroArea || "Organización",
-      etiquetas: [],
       dependenciasIds: [],
-      fechaLimite: null,
-      fechaProgramada: null,
       recurrencia: null,
       delegacion: null,
       bandeja: false,
-      creadaEn: new Date().toISOString(),
-    };
-    agregarTarea(nueva);
-    setNuevoTexto((prev) => ({ ...prev, [estado]: "" }));
+      creadaEn: getHoyISO(),
+    });
   }
 
   return (
@@ -157,27 +152,27 @@ export default function KanbanPage() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <input
-                  value={nuevoTexto[col.id] ?? ""}
-                  onChange={(e) =>
-                    setNuevoTexto((prev) => ({ ...prev, [col.id]: e.target.value }))
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && crearTarea(col.id)}
-                  placeholder="Nueva tarea…"
-                  className="h-7 flex-1 rounded-md border border-border bg-popover px-2 text-xs text-foreground placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-                <button
-                  onClick={() => crearTarea(col.id)}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-secondary hover:text-foreground"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setColumnaNueva(col.id)}
+                className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border py-1.5 text-xs text-text-secondary hover:border-primary/40 hover:text-foreground"
+              >
+                <Plus className="size-3.5" />
+                Nueva tarea
+              </button>
             </div>
           );
         })}
       </div>
+
+      <FormDialog
+        open={columnaNueva !== null}
+        onOpenChange={(v) => !v && setColumnaNueva(null)}
+        title={`Nueva tarea — ${columnaNueva ? COLUMNAS_KANBAN.find((c) => c.id === columnaNueva)?.titulo : ""}`}
+        campos={CAMPOS}
+        datosIniciales={{ area: filtroArea, prioridad: "Media", impacto: "Medio", urgencia: "Normal", energia: "Media" }}
+        onGuardar={guardarNuevaTarea}
+        submitLabel="Crear tarea"
+      />
     </div>
   );
 }

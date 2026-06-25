@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Lightbulb } from "lucide-react";
+import { ArrowRight, Lightbulb, Plus, Pencil } from "lucide-react";
 
+import type { Idea } from "@/types/mente";
 import { useMenteStore } from "@/stores/mente-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
+import { getHoyISO } from "@/lib/hoy";
 import { cn } from "@/lib/utils";
+
+const CAMPOS: CampoForm[] = [
+  { key: "titulo", label: "Título", type: "text" },
+  { key: "descripcion", label: "Descripción", type: "textarea" },
+  { key: "area", label: "Área de vida", type: "text" },
+  { key: "potencial", label: "Potencial", type: "select", opciones: ["Baja", "Media", "Alta", "Transformadora"] },
+  { key: "accionesPosibles", label: "Acciones posibles (separadas por coma)", type: "tags" },
+];
 
 const POTENCIAL_COLOR: Record<string, string> = {
   Transformadora: "bg-primary/15 text-primary",
@@ -34,7 +45,11 @@ const DESTINOS = ["Proyecto", "Tarea", "Objetivo", "Nota", "Decisión"] as const
 export default function IdeasPage() {
   const ideas = useMenteStore((s) => s.ideas);
   const convertirIdea = useMenteStore((s) => s.convertirIdea);
+  const agregarIdea = useMenteStore((s) => s.agregarIdea);
+  const actualizarIdea = useMenteStore((s) => s.actualizarIdea);
   const [confirmacion, setConfirmacion] = useState<string | null>(null);
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+  const [editando, setEditando] = useState<Idea | null>(null);
 
   function convertir(id: string, titulo: string, destino: (typeof DESTINOS)[number]) {
     convertirIdea(id, destino);
@@ -42,11 +57,48 @@ export default function IdeasPage() {
     setTimeout(() => setConfirmacion(null), 3000);
   }
 
+  function abrirNueva() {
+    setEditando(null);
+    setDialogAbierto(true);
+  }
+
+  function abrirEditar(idea: Idea) {
+    setEditando(idea);
+    setDialogAbierto(true);
+  }
+
+  function guardar(valores: Record<string, unknown>) {
+    const datos = {
+      titulo: String(valores.titulo),
+      descripcion: String(valores.descripcion),
+      area: String(valores.area),
+      potencial: valores.potencial as Idea["potencial"],
+      accionesPosibles: valores.accionesPosibles as string[],
+    };
+    if (editando) {
+      actualizarIdea(editando.id, datos);
+    } else {
+      agregarIdea({
+        id: crypto.randomUUID(),
+        ...datos,
+        estado: "Nueva",
+        origen: "Manual",
+        fecha: getHoyISO(),
+      });
+    }
+  }
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-8 py-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">Ideas</h1>
-        <p className="text-sm text-text-secondary">{ideas.length} ideas registradas</p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-foreground">Ideas</h1>
+          <p className="text-sm text-text-secondary">{ideas.length} ideas registradas</p>
+        </div>
+        <Button size="sm" onClick={abrirNueva}>
+          <Plus data-icon="inline-start" />
+          Nueva Idea
+        </Button>
       </div>
 
       {confirmacion && (
@@ -65,6 +117,13 @@ export default function IdeasPage() {
               <div className="flex items-center gap-2">
                 <Lightbulb className="size-4 shrink-0 text-text-muted" />
                 <span className="text-base font-medium text-foreground">{idea.titulo}</span>
+                <button
+                  onClick={() => abrirEditar(idea)}
+                  className="text-text-muted hover:text-foreground"
+                  aria-label="Editar idea"
+                >
+                  <Pencil className="size-3" />
+                </button>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge className={cn(POTENCIAL_COLOR[idea.potencial])}>{idea.potencial}</Badge>
@@ -124,6 +183,16 @@ export default function IdeasPage() {
           </div>
         ))}
       </div>
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title={editando ? "Editar idea" : "Nueva idea"}
+        campos={CAMPOS}
+        datosIniciales={editando ?? undefined}
+        onGuardar={guardar}
+        submitLabel={editando ? "Guardar cambios" : "Crear idea"}
+      />
     </div>
   );
 }

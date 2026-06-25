@@ -1,15 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Mail, Phone } from "lucide-react";
+import { AlertTriangle, Mail, Phone, Plus, Pencil } from "lucide-react";
 
+import type { Cliente } from "@/types/negocio";
 import { useNegocioStore } from "@/stores/negocio-store";
 import { useAccionStore } from "@/stores/accion-store";
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 import { getHoyISO } from "@/lib/hoy";
 import { cn } from "@/lib/utils";
+
+const CAMPOS: CampoForm[] = [
+  { key: "nombre", label: "Nombre", type: "text" },
+  { key: "empresa", label: "Empresa", type: "text" },
+  { key: "sector", label: "Sector", type: "text" },
+  { key: "email", label: "Email", type: "text" },
+  { key: "telefono", label: "Teléfono", type: "text" },
+  { key: "estado", label: "Estado", type: "select", opciones: ["Prospecto", "Activo", "Pausado", "Inactivo", "VIP"] },
+  { key: "proximaAccion", label: "Próxima acción", type: "text" },
+  { key: "proximaAccionFecha", label: "Fecha de la próxima acción", type: "date" },
+];
 
 const ESTADO_COLOR: Record<string, string> = {
   Prospecto: "bg-primary/15 text-primary",
@@ -31,12 +44,53 @@ export default function CRMPage() {
   const clientes = useNegocioStore((s) => s.clientes);
   const registrarReunion = useNegocioStore((s) => s.registrarReunion);
   const registrarPropuesta = useNegocioStore((s) => s.registrarPropuesta);
+  const agregarCliente = useNegocioStore((s) => s.agregarCliente);
+  const actualizarCliente = useNegocioStore((s) => s.actualizarCliente);
   const proyectos = useAccionStore((s) => s.proyectos);
   const ingresos = useFinanzasStore((s) => s.ingresos);
 
   const [filtroEstado, setFiltroEstado] = useState<string>("");
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+  const [editando, setEditando] = useState<Cliente | null>(null);
 
   const filtrados = clientes.filter((c) => !filtroEstado || c.estado === filtroEstado);
+
+  function abrirNuevo() {
+    setEditando(null);
+    setDialogAbierto(true);
+  }
+
+  function abrirEditar(c: Cliente) {
+    setEditando(c);
+    setDialogAbierto(true);
+  }
+
+  function guardar(valores: Record<string, unknown>) {
+    const datos = {
+      nombre: String(valores.nombre),
+      empresa: String(valores.empresa),
+      sector: String(valores.sector),
+      email: String(valores.email),
+      telefono: String(valores.telefono),
+      estado: valores.estado as Cliente["estado"],
+      proximaAccion: valores.proximaAccion ? String(valores.proximaAccion) : undefined,
+      proximaAccionFecha: (valores.proximaAccionFecha as string) || null,
+    };
+    if (editando) {
+      actualizarCliente(editando.id, datos);
+    } else {
+      agregarCliente({
+        id: crypto.randomUUID(),
+        ...datos,
+        notas: [],
+        archivos: [],
+        reunionesRegistradas: 0,
+        propuestasEnviadas: 0,
+        ultimaInteraccion: getHoyISO(),
+        creadoEn: getHoyISO(),
+      });
+    }
+  }
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-8 py-10">
@@ -56,6 +110,11 @@ export default function CRMPage() {
             <option key={e}>{e}</option>
           ))}
         </select>
+
+        <Button size="sm" onClick={abrirNuevo}>
+          <Plus data-icon="inline-start" />
+          Nuevo Cliente
+        </Button>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -87,6 +146,13 @@ export default function CRMPage() {
                         {dias} días sin seguimiento
                       </Badge>
                     )}
+                    <button
+                      onClick={() => abrirEditar(cliente)}
+                      className="text-text-muted hover:text-foreground"
+                      aria-label="Editar cliente"
+                    >
+                      <Pencil className="size-3" />
+                    </button>
                   </div>
                   <span className="text-xs text-text-muted">
                     {cliente.empresa} · {cliente.sector}
@@ -157,6 +223,16 @@ export default function CRMPage() {
           );
         })}
       </div>
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title={editando ? "Editar cliente" : "Nuevo cliente"}
+        campos={CAMPOS}
+        datosIniciales={editando ?? undefined}
+        onGuardar={guardar}
+        submitLabel={editando ? "Guardar cambios" : "Crear cliente"}
+      />
     </div>
   );
 }

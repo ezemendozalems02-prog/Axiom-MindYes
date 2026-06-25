@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Check, Sunrise, Moon } from "lucide-react";
+import { GripVertical, Check, Sunrise, Moon, Plus, Pencil } from "lucide-react";
 
+import type { Rutina } from "@/types/identidad";
 import { useIdentidadStore } from "@/stores/identidad-store";
 import { tiempoEstimadoHabitoMin } from "@/lib/mock/identidad";
 import { formatMinutos } from "@/lib/accion-format";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
 export default function RutinasPage() {
   const rutinas = useIdentidadStore((s) => s.rutinas);
@@ -14,9 +17,52 @@ export default function RutinasPage() {
   const estadoHoy = useIdentidadStore((s) => s.estadoHoy);
   const marcarHabito = useIdentidadStore((s) => s.marcarHabito);
   const reordenarRutina = useIdentidadStore((s) => s.reordenarRutina);
+  const agregarRutina = useIdentidadStore((s) => s.agregarRutina);
+  const actualizarRutina = useIdentidadStore((s) => s.actualizarRutina);
+  const eliminarRutina = useIdentidadStore((s) => s.eliminarRutina);
   const [arrastrando, setArrastrando] = useState<{ rutinaId: string; habitoId: string } | null>(
     null
   );
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+  const [editando, setEditando] = useState<Rutina | null>(null);
+
+  const CAMPOS: CampoForm[] = [
+    { key: "nombre", label: "Nombre", type: "text", placeholder: "Ej: Rutina de la mañana" },
+    { key: "momento", label: "Momento", type: "select", opciones: ["mañana", "noche"] },
+    {
+      key: "habitoIds",
+      label: "Hábitos incluidos",
+      type: "checklist",
+      opciones: habitos.map((h) => ({ value: h.id, label: h.nombre })),
+    },
+  ];
+
+  function abrirNueva() {
+    setEditando(null);
+    setDialogAbierto(true);
+  }
+
+  function abrirEditar(r: Rutina) {
+    setEditando(r);
+    setDialogAbierto(true);
+  }
+
+  function guardar(valores: Record<string, unknown>) {
+    if (editando) {
+      actualizarRutina(editando.id, {
+        nombre: String(valores.nombre),
+        momento: valores.momento as Rutina["momento"],
+        habitoIds: valores.habitoIds as string[],
+      });
+    } else {
+      agregarRutina({
+        id: crypto.randomUUID(),
+        nombre: String(valores.nombre),
+        momento: valores.momento as Rutina["momento"],
+        habitoIds: valores.habitoIds as string[],
+      });
+    }
+  }
 
   const habitoPorId = Object.fromEntries(habitos.map((h) => [h.id, h]));
 
@@ -32,11 +78,17 @@ export default function RutinasPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-8 py-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">Rutinas</h1>
-        <p className="text-sm text-text-secondary">
-          Agrupá tus hábitos en bloques de mañana y noche.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-foreground">Rutinas</h1>
+          <p className="text-sm text-text-secondary">
+            Agrupá tus hábitos en bloques de mañana y noche.
+          </p>
+        </div>
+        <Button size="sm" onClick={abrirNueva}>
+          <Plus data-icon="inline-start" />
+          Nueva Rutina
+        </Button>
       </div>
 
       {rutinas.map((rutina) => {
@@ -46,7 +98,7 @@ export default function RutinasPage() {
         );
 
         return (
-          <div key={rutina.id} className="flex flex-col gap-3">
+          <div key={rutina.id} className="group/rutina flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {rutina.momento === "mañana" ? (
@@ -57,6 +109,13 @@ export default function RutinasPage() {
                 <span className="text-base font-medium text-foreground">
                   {rutina.nombre}
                 </span>
+                <button
+                  onClick={() => abrirEditar(rutina)}
+                  className="text-text-muted opacity-0 transition-opacity group-hover/rutina:opacity-100 hover:text-foreground"
+                  aria-label="Editar rutina"
+                >
+                  <Pencil className="size-3" />
+                </button>
               </div>
               <span className="text-xs text-text-muted">
                 {formatMinutos(tiempoTotal)} en total
@@ -115,6 +174,17 @@ export default function RutinasPage() {
           </div>
         );
       })}
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title={editando ? "Editar rutina" : "Nueva rutina"}
+        campos={CAMPOS}
+        datosIniciales={editando ?? undefined}
+        onGuardar={guardar}
+        onEliminar={editando ? () => eliminarRutina(editando.id) : undefined}
+        submitLabel={editando ? "Guardar cambios" : "Crear rutina"}
+      />
     </div>
   );
 }

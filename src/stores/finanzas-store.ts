@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { Gasto, Ingreso, ObjetivosFinancieros, Patrimonio } from "@/types/finanzas";
+import type { Gasto, Ingreso, Inversion, ObjetivosFinancieros, Patrimonio } from "@/types/finanzas";
 import {
   gastos as gastosIniciales,
   ingresos as ingresosIniciales,
@@ -16,6 +16,9 @@ type FinanzasStore = {
   agregarIngreso: (ingreso: Ingreso) => void;
   agregarGasto: (gasto: Gasto) => void;
   actualizarObjetivos: (cambios: Partial<ObjetivosFinancieros>) => void;
+  agregarInversion: (inversion: Inversion) => void;
+  eliminarInversion: (id: string) => void;
+  actualizarPatrimonio: (cambios: Partial<Patrimonio>) => void;
 };
 
 export const useFinanzasStore = create<FinanzasStore>((set) => ({
@@ -32,4 +35,20 @@ export const useFinanzasStore = create<FinanzasStore>((set) => ({
 
   actualizarObjetivos: (cambios) =>
     set((state) => ({ objetivos: { ...state.objetivos, ...cambios } })),
+
+  agregarInversion: (inversion) =>
+    set((state) => ({
+      objetivos: { ...state.objetivos, inversiones: [...state.objetivos.inversiones, inversion] },
+    })),
+
+  eliminarInversion: (id) =>
+    set((state) => ({
+      objetivos: {
+        ...state.objetivos,
+        inversiones: state.objetivos.inversiones.filter((i) => i.id !== id),
+      },
+    })),
+
+  actualizarPatrimonio: (cambios) =>
+    set((state) => ({ patrimonio: { ...state.patrimonio, ...cambios } })),
 }));

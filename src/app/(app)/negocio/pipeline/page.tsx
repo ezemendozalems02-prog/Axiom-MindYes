@@ -1,21 +1,55 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 
-import { COLUMNAS_PIPELINE, type EstadoOportunidad } from "@/types/negocio";
+import { COLUMNAS_PIPELINE } from "@/types/negocio";
 import { useNegocioStore } from "@/stores/negocio-store";
 import { cn } from "@/lib/utils";
+import { getHoyISO } from "@/lib/hoy";
+import { Button } from "@/components/ui/button";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
 export default function PipelinePage() {
   const oportunidades = useNegocioStore((s) => s.oportunidades);
   const clientes = useNegocioStore((s) => s.clientes);
   const moverOportunidad = useNegocioStore((s) => s.moverOportunidad);
+  const agregarOportunidad = useNegocioStore((s) => s.agregarOportunidad);
   const [arrastrandoId, setArrastrandoId] = useState<string | null>(null);
+  const [dialogAbierto, setDialogAbierto] = useState(false);
 
   const clientePorId = useMemo(
     () => Object.fromEntries(clientes.map((c) => [c.id, c.nombre])),
     [clientes]
   );
+
+  const CAMPOS: CampoForm[] = [
+    { key: "titulo", label: "Título", type: "text", placeholder: "Ej: Mantenimiento mensual" },
+    {
+      key: "clienteId",
+      label: "Cliente",
+      type: "select-ref",
+      opciones: clientes.map((c) => ({ value: c.id, label: c.nombre })),
+      vacio: "Sin cliente",
+    },
+    { key: "valorEstimado", label: "Valor estimado (USD)", type: "number", placeholder: "1000" },
+    { key: "probabilidad", label: "Probabilidad de cierre (%)", type: "number", placeholder: "50" },
+    { key: "fechaEstimadaCierre", label: "Fecha estimada de cierre", type: "date" },
+  ];
+
+  function guardar(valores: Record<string, unknown>) {
+    agregarOportunidad({
+      id: crypto.randomUUID(),
+      clienteId: String(valores.clienteId ?? ""),
+      titulo: String(valores.titulo),
+      valorEstimado: Number(valores.valorEstimado) || 0,
+      probabilidad: Number(valores.probabilidad) || 0,
+      fechaEstimadaCierre: (valores.fechaEstimadaCierre as string) || null,
+      estado: "Nuevo Contacto",
+      creadaEn: getHoyISO(),
+      cerradaEn: null,
+    });
+  }
 
   const ganadas = oportunidades.filter((o) => o.estado === "Cerrado Ganado");
   const perdidas = oportunidades.filter((o) => o.estado === "Cerrado Perdido");
@@ -44,6 +78,11 @@ export default function PipelinePage() {
     <div className="flex h-full flex-col gap-5 px-8 py-8">
       <div className="flex flex-wrap items-center gap-6">
         <h1 className="text-2xl font-semibold text-foreground">Pipeline de Ventas</h1>
+
+        <Button size="sm" onClick={() => setDialogAbierto(true)}>
+          <Plus data-icon="inline-start" />
+          Nueva Oportunidad
+        </Button>
 
         <div className="ml-auto flex items-center gap-6 text-sm">
           <div className="flex flex-col">
@@ -121,6 +160,15 @@ export default function PipelinePage() {
           );
         })}
       </div>
+
+      <FormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        title="Nueva oportunidad"
+        campos={CAMPOS}
+        onGuardar={guardar}
+        submitLabel="Crear oportunidad"
+      />
     </div>
   );
 }

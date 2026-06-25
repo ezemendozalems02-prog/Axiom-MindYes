@@ -1,15 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { Search, Plus, Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCommandPaletteStore } from "@/stores/command-palette-store";
 import { useQuickCaptureStore } from "@/stores/quick-capture-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 export function Topbar({ children }: { children?: React.ReactNode }) {
   const setOpenBusqueda = useCommandPaletteStore((s) => s.setOpen);
   const setOpenCaptura = useQuickCaptureStore((s) => s.setOpen);
+  const nombre = useAuthStore((s) => s.nombre);
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border px-5">
@@ -37,11 +40,13 @@ export function Topbar({ children }: { children?: React.ReactNode }) {
         <Bell className="size-4" />
       </Button>
 
-      <Avatar size="sm">
-        <AvatarFallback className="bg-secondary text-foreground">
-          N
-        </AvatarFallback>
-      </Avatar>
+      <Link href="/configuracion" aria-label="Configuración de cuenta">
+        <Avatar size="sm">
+          <AvatarFallback className="bg-secondary text-foreground">
+            {nombre.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      </Link>
     </header>
   );
 }

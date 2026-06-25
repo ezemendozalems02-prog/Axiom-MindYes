@@ -6,6 +6,7 @@ import { Settings } from "lucide-react";
 
 import { pilares } from "@/config/nav";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 import {
   Avatar,
   AvatarFallback,
@@ -13,6 +14,7 @@ import {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const nombre = useAuthStore((s) => s.nombre);
 
   return (
     <aside className="hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
@@ -47,20 +49,24 @@ export function Sidebar() {
         <div className="flex items-center gap-2">
           <Avatar size="sm">
             <AvatarFallback className="bg-secondary text-foreground">
-              N
+              {nombre.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col leading-none">
-            <span className="text-sm font-medium text-foreground">Neo</span>
+            <span className="text-sm font-medium text-foreground">{nombre}</span>
             <span className="text-xs text-text-muted">Sincronizado</span>
           </div>
         </div>
-        <button
+        <Link
+          href="/configuracion"
           aria-label="Configuración"
-          className="flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-sidebar-accent hover:text-foreground"
+          className={cn(
+            "flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-sidebar-accent hover:text-foreground",
+            pathname?.startsWith("/configuracion") && "bg-sidebar-accent text-foreground"
+          )}
         >
           <Settings className="size-4" />
-        </button>
+        </Link>
       </div>
     </aside>
   );
