@@ -18,7 +18,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       nombre: "Neo",
       email: "ezemendozalems02@gmail.com",
-      password: "hola1234@",
+      password: "Hola1234@",
 
       login: (email, password) => {
         const ok = get().email.toLowerCase() === email.trim().toLowerCase() && get().password === password;
@@ -36,6 +36,6 @@ export const useAuthStore = create<AuthStore>()(
         return true;
       },
     }),
-    { name: "axiom-mind-auth" }
+    { name: "axiom-mind-auth-v2" }
   )
 );
