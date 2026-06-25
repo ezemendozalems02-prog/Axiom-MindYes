@@ -30,7 +30,7 @@ export default function KanbanPage() {
 
   const proyectoPorId = useMemo(
     () => Object.fromEntries(proyectos.map((p) => [p.id, p.nombre])),
-    []
+    [proyectos]
   );
 
   const CAMPOS = useMemo(

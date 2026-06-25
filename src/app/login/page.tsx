@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth-store";
@@ -9,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
-  const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
   const [email, setEmail] = useState("");
@@ -25,7 +23,9 @@ export default function LoginPage() {
     setTimeout(() => {
       const ok = login(email, password);
       if (ok) {
-        router.push("/centro-de-control");
+        // Navegación dura: cada cuenta tiene su propio namespace de datos en
+        // localStorage y los stores deben rehidratar desde cero al cambiar de cuenta.
+        window.location.href = "/centro-de-control";
       } else {
         setError("Email o contraseña incorrectos.");
         setCargando(false);

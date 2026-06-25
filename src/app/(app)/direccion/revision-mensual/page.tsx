@@ -19,6 +19,7 @@ export default function RevisionMensualPage() {
   const revisiones = useDireccionStore((s) => s.revisionesMensuales);
   const agregarRevisionMensual = useDireccionStore((s) => s.agregarRevisionMensual);
   const objetivos = useDireccionStore((s) => s.objetivos);
+  const metas = useDireccionStore((s) => s.metas);
   const indiceConsistenciaHabitos = useIdentidadStore((s) => s.indiceConsistenciaGlobal());
   const ingresos = useFinanzasStore((s) => s.ingresos);
   const gastos = useFinanzasStore((s) => s.gastos);
@@ -41,7 +42,7 @@ export default function RevisionMensualPage() {
     const mes = mesDe(hoy);
     const activos = objetivos.filter((o) => o.estado === "Activo");
     const conProgreso = activos
-      .map((o) => ({ o, progreso: calcularProgresoObjetivo(o.id, objetivos) }))
+      .map((o) => ({ o, progreso: calcularProgresoObjetivo(o.id, objetivos, metas) }))
       .sort((a, b) => b.progreso - a.progreso);
 
     const ingresosMes = sumarIngresosDelMes(ingresos, mes);

@@ -134,6 +134,7 @@ export function ModoProfundo({
               Sesión terminada — ¿completaste la tarea?
             </span>
             <p className="text-sm text-text-secondary">
+              {/* eslint-disable-next-line react-hooks/refs */}
               Tiempo invertido: {Math.max(1, Math.round(segundosTranscurridos.current / 60))} min
             </p>
             <div className="flex items-center gap-3">

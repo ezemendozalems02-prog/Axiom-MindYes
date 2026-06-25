@@ -44,6 +44,7 @@ export default function MiDiaPage() {
   useEffect(() => {
     const energia = energiaDesdeIndice(indices.ejecucion);
     const ordenadas = ordenarPorPrioridad(tareasDeHoy, energia, hoy);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrden((prev) => {
       const idsActuales = new Set(tareasDeHoy.map((t) => t.id));
       const conservado = prev.filter((id) => idsActuales.has(id));

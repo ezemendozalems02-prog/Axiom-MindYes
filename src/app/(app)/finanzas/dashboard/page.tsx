@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Pencil } from "lucide-react";
 import {
   Bar,
@@ -16,6 +17,8 @@ import {
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { getHoyISO } from "@/lib/hoy";
 import {
+  calcularRatioDeudaIngreso,
+  calcularTotalDeudaPendiente,
   flujoProyectado30Dias,
   gastosPorCategoria,
   mesAnterior,
@@ -24,10 +27,10 @@ import {
   sumarIngresosDelMes,
 } from "@/lib/finanzas";
 import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const CAMPOS_PATRIMONIO: CampoForm[] = [
   { key: "activos", label: "Activos (USD)", type: "number" },
-  { key: "deudas", label: "Deudas (USD)", type: "number" },
 ];
 
 const COLORES_DONUT = [
@@ -43,6 +46,7 @@ export default function DashboardFinancieroPage() {
   const gastos = useFinanzasStore((s) => s.gastos);
   const objetivos = useFinanzasStore((s) => s.objetivos);
   const patrimonio = useFinanzasStore((s) => s.patrimonio);
+  const deudas = useFinanzasStore((s) => s.deudas);
   const actualizarPatrimonio = useFinanzasStore((s) => s.actualizarPatrimonio);
   const [dialogPatrimonioAbierto, setDialogPatrimonioAbierto] = useState(false);
 
@@ -63,7 +67,9 @@ export default function DashboardFinancieroPage() {
   const top3 = categorias.slice(0, 3);
 
   const flujo30 = flujoProyectado30Dias(ingresos, gastos);
-  const patrimonioNeto = patrimonio.activos - patrimonio.deudas;
+  const deudaTotal = calcularTotalDeudaPendiente(deudas);
+  const ratioDeudaIngreso = calcularRatioDeudaIngreso(deudas, ingresosMesActual);
+  const patrimonioNeto = patrimonio.activos - deudaTotal;
   const pctAhorro =
     objetivos.ahorroMensualTarget > 0
       ? Math.min(100, Math.round((ahorroMes / objetivos.ahorroMensualTarget) * 100))
@@ -76,7 +82,7 @@ export default function DashboardFinancieroPage() {
         <p className="text-sm text-text-secondary">Tu realidad económica, de un vistazo.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
           <span className="text-xs text-text-muted uppercase tracking-wide">
             Flujo proyectado (30 días)
@@ -115,6 +121,30 @@ export default function DashboardFinancieroPage() {
             <div className="h-full rounded-full bg-success" style={{ width: `${pctAhorro}%` }} />
           </div>
         </div>
+        <Link
+          href="/finanzas/deudas"
+          className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-text-muted uppercase tracking-wide">Deuda total</span>
+            {ratioDeudaIngreso > 0 && (
+              <Badge
+                className={
+                  ratioDeudaIngreso > 40
+                    ? "bg-destructive/15 text-destructive"
+                    : ratioDeudaIngreso > 20
+                      ? "bg-warning/15 text-warning"
+                      : "bg-success/15 text-success"
+                }
+              >
+                {ratioDeudaIngreso}% del ingreso
+              </Badge>
+            )}
+          </div>
+          <span className={`text-2xl font-semibold ${deudaTotal > 0 ? "text-destructive" : "text-foreground"}`}>
+            ${deudaTotal.toLocaleString("es-AR")}
+          </span>
+        </Link>
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
           <span className="text-xs text-text-muted uppercase tracking-wide">
             Fondo de emergencia
@@ -218,7 +248,6 @@ export default function DashboardFinancieroPage() {
         onGuardar={(valores) =>
           actualizarPatrimonio({
             activos: Number(valores.activos) || 0,
-            deudas: Number(valores.deudas) || 0,
           })
         }
         submitLabel="Guardar cambios"

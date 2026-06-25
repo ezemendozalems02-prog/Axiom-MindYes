@@ -2,7 +2,7 @@ import type { EstadoHabitoDia, Habito } from "@/types/identidad";
 import { getHoyISO } from "@/lib/hoy";
 
 function fechaISOHaceNDias(n: number): string {
-  const d = new Date("2026-06-24T00:00:00");
+  const d = new Date(getHoyISO() + "T00:00:00");
   d.setDate(d.getDate() - n);
   const y = d.getFullYear();
   const m = (d.getMonth() + 1).toString().padStart(2, "0");

@@ -92,6 +92,7 @@ export function FormDialog({
   const [valores, setValores] = useState<Valores>(() => valoresIniciales(campos, datosIniciales));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) setValores(valoresIniciales(campos, datosIniciales));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, datosIniciales]);

@@ -1,7 +1,7 @@
 import type { EstadoGeneral, Insight, NivelEnergia, Progreso, PrioridadAbsoluta } from "@/types/centro-de-control";
 import type { Indices, NivelesMotor } from "@/types/inteligencia";
 import type { Habito as HabitoIdentidad, EstadoHabitoDia } from "@/types/identidad";
-import type { Objetivo } from "@/types/direccion";
+import type { Meta, Objetivo } from "@/types/direccion";
 import type { Proyecto, Tarea } from "@/types/accion";
 import type { Ingreso, ObjetivosFinancieros } from "@/types/finanzas";
 import { calcularProgresoObjetivo } from "@/lib/direccion";
@@ -77,6 +77,7 @@ export function calcularPrioridadAbsolutaEnVivo(
 
 export function calcularProgresoEnVivo(datos: {
   objetivos: Objetivo[];
+  metas: Meta[];
   proyectos: Proyecto[];
   tareas: Tarea[];
   habitos: HabitoIdentidad[];
@@ -85,12 +86,12 @@ export function calcularProgresoEnVivo(datos: {
   objetivosFinancieros: ObjetivosFinancieros;
   hoy: string;
 }): Progreso {
-  const { objetivos, proyectos, tareas, habitos, estadoHoyHabitos, ingresos, objetivosFinancieros, hoy } = datos;
+  const { objetivos, metas, proyectos, tareas, habitos, estadoHoyHabitos, ingresos, objetivosFinancieros, hoy } = datos;
 
   const objetivosActivos = objetivos
     .filter((o) => o.estado === "Activo")
     .slice(0, 3)
-    .map((o) => ({ id: o.id, nombre: o.titulo, progreso: calcularProgresoObjetivo(o.id, objetivos) }));
+    .map((o) => ({ id: o.id, nombre: o.titulo, progreso: calcularProgresoObjetivo(o.id, objetivos, metas) }));
 
   const proyectosEnCurso = proyectos
     .filter((p) => p.estado === "en_curso")

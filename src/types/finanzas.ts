@@ -42,5 +42,25 @@ export type ObjetivosFinancieros = {
 
 export type Patrimonio = {
   activos: number;
-  deudas: number;
+};
+
+export type EstadoDeuda = "Activa" | "Pagada";
+
+export type PagoDeuda = {
+  fecha: string;
+  monto: number;
+};
+
+export type Deuda = {
+  id: string;
+  nombre: string;
+  acreedor: string;
+  montoOriginal: number;
+  moneda: Moneda;
+  tasaInteresMensual: number; // %, 0 si no aplica
+  cuotaMensual: number;
+  diaVencimiento: number; // 1-31
+  fechaInicio: string;
+  estado: EstadoDeuda;
+  pagos: PagoDeuda[];
 };

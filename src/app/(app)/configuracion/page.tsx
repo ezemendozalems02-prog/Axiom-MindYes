@@ -2,24 +2,29 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, LogOut, Mail, ShieldCheck, User } from "lucide-react";
+import { Check, LogOut, Mail, RotateCcw, ShieldCheck, User } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth-store";
+import { useCuentaMetaStore } from "@/stores/cuenta-meta-store";
+import { aplicarSeedDemo } from "@/lib/demo/seed-demo-user";
 import { Topbar } from "@/components/layout/topbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function ConfiguracionPage() {
   const router = useRouter();
-  const nombre = useAuthStore((s) => s.nombre);
-  const email = useAuthStore((s) => s.email);
+  const nombre = useAuthStore((s) => s.nombreSesion);
+  const email = useAuthStore((s) => s.emailSesion);
+  const esCuentaDemo = useAuthStore((s) => s.esCuentaDemo);
   const actualizarCuenta = useAuthStore((s) => s.actualizarCuenta);
   const cambiarPassword = useAuthStore((s) => s.cambiarPassword);
   const logout = useAuthStore((s) => s.logout);
+  const marcarSeedDemoAplicado = useCuentaMetaStore((s) => s.marcarSeedDemoAplicado);
 
   const [nombreInput, setNombreInput] = useState(nombre);
   const [emailInput, setEmailInput] = useState(email);
   const [confirmacionCuenta, setConfirmacionCuenta] = useState(false);
+  const [confirmacionReset, setConfirmacionReset] = useState(false);
 
   const [actual, setActual] = useState("");
   const [nueva, setNueva] = useState("");
@@ -60,6 +65,13 @@ export default function ConfiguracionPage() {
     router.push("/login");
   }
 
+  function restablecerDatosDemo() {
+    aplicarSeedDemo();
+    marcarSeedDemoAplicado();
+    setConfirmacionReset(true);
+    setTimeout(() => setConfirmacionReset(false), 2500);
+  }
+
   return (
     <>
       <Topbar>
@@ -74,11 +86,21 @@ export default function ConfiguracionPage() {
               <h2 className="text-base font-semibold text-foreground">Datos de la cuenta</h2>
             </div>
 
+            {esCuentaDemo && (
+              <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
+                Estás usando la cuenta demo (demo@axiommind.app). Los datos de la cuenta no son editables.
+              </p>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
                 Nombre
               </label>
-              <Input value={nombreInput} onChange={(e) => setNombreInput(e.target.value)} />
+              <Input
+                value={nombreInput}
+                onChange={(e) => setNombreInput(e.target.value)}
+                disabled={esCuentaDemo}
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -91,13 +113,14 @@ export default function ConfiguracionPage() {
                   type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
+                  disabled={esCuentaDemo}
                   className="border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <Button size="sm" onClick={guardarCuenta}>
+              <Button size="sm" onClick={guardarCuenta} disabled={esCuentaDemo}>
                 Guardar cambios
               </Button>
               {confirmacionCuenta && (
@@ -119,13 +142,23 @@ export default function ConfiguracionPage() {
               <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
                 Contraseña actual
               </label>
-              <Input type="password" value={actual} onChange={(e) => setActual(e.target.value)} />
+              <Input
+                type="password"
+                value={actual}
+                onChange={(e) => setActual(e.target.value)}
+                disabled={esCuentaDemo}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
                 Nueva contraseña
               </label>
-              <Input type="password" value={nueva} onChange={(e) => setNueva(e.target.value)} />
+              <Input
+                type="password"
+                value={nueva}
+                onChange={(e) => setNueva(e.target.value)}
+                disabled={esCuentaDemo}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
@@ -135,6 +168,7 @@ export default function ConfiguracionPage() {
                 type="password"
                 value={confirmarNueva}
                 onChange={(e) => setConfirmarNueva(e.target.value)}
+                disabled={esCuentaDemo}
               />
             </div>
 
@@ -145,7 +179,7 @@ export default function ConfiguracionPage() {
             )}
 
             <div className="flex items-center gap-3">
-              <Button size="sm" variant="secondary" onClick={guardarPassword}>
+              <Button size="sm" variant="secondary" onClick={guardarPassword} disabled={esCuentaDemo}>
                 Cambiar contraseña
               </Button>
               {confirmacionPassword && (
@@ -156,6 +190,32 @@ export default function ConfiguracionPage() {
               )}
             </div>
           </section>
+
+          {esCuentaDemo && (
+            <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="size-4 text-text-muted" />
+                <h2 className="text-base font-semibold text-foreground">Datos demo</h2>
+              </div>
+              <p className="text-sm text-text-secondary">
+                La cuenta demo tiene sus propios datos, separados por completo de tu cuenta real —
+                vivís en un espacio de almacenamiento aislado. Si los desordenaste explorando, podés
+                reiniciarlos al estado original de Matías Guerrero.
+              </p>
+              <div className="flex items-center gap-3">
+                <Button size="sm" variant="secondary" onClick={restablecerDatosDemo}>
+                  <RotateCcw data-icon="inline-start" />
+                  Restablecer datos demo
+                </Button>
+                {confirmacionReset && (
+                  <span className="flex items-center gap-1 text-xs text-success">
+                    <Check className="size-3.5" />
+                    Datos demo restablecidos.
+                  </span>
+                )}
+              </div>
+            </section>
+          )}
 
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
             <h2 className="text-base font-semibold text-foreground">Sesión</h2>

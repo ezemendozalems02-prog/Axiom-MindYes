@@ -20,6 +20,7 @@ const VISTAS = ["Árbol", "Lista", "Timeline", "Por Área"] as const;
 
 export default function ObjetivosPage() {
   const objetivos = useDireccionStore((s) => s.objetivos);
+  const metas = useDireccionStore((s) => s.metas);
   const agregarObjetivo = useDireccionStore((s) => s.agregarObjetivo);
   const proyectos = useAccionStore((s) => s.proyectos);
   const habitos = useIdentidadStore((s) => s.habitos);
@@ -87,11 +88,11 @@ export default function ObjetivosPage() {
     if (filtroEstado !== "Todos") r = r.filter((o) => o.estado === filtroEstado);
     return [...r].sort((a, b) => {
       if (orden === "progreso") {
-        return calcularProgresoObjetivo(b.id, objetivos) - calcularProgresoObjetivo(a.id, objetivos);
+        return calcularProgresoObjetivo(b.id, objetivos, metas) - calcularProgresoObjetivo(a.id, objetivos, metas);
       }
       return (a.fechaLimite ?? "9999").localeCompare(b.fechaLimite ?? "9999");
     });
-  }, [objetivos, filtroNivel, filtroArea, filtroEstado, orden]);
+  }, [objetivos, metas, filtroNivel, filtroArea, filtroEstado, orden]);
 
   const raices = raicesDe(objetivos);
 
@@ -125,7 +126,7 @@ export default function ObjetivosPage() {
       {vista === "Árbol" && (
         <div className="flex flex-col gap-4">
           {raices.map((r) => (
-            <ObjetivoNodo key={r.id} objetivo={r} objetivos={objetivos} />
+            <ObjetivoNodo key={r.id} objetivo={r} objetivos={objetivos} metas={metas} />
           ))}
         </div>
       )}
@@ -180,7 +181,7 @@ export default function ObjetivosPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filtrados.map((o) => (
-              <ObjetivoCard key={o.id} objetivo={o} objetivos={objetivos} />
+              <ObjetivoCard key={o.id} objetivo={o} objetivos={objetivos} metas={metas} />
             ))}
             {filtrados.length === 0 && (
               <p className="col-span-2 text-sm text-text-muted">Sin objetivos para estos filtros.</p>
@@ -199,7 +200,7 @@ export default function ObjetivosPage() {
                   .filter((o) => o.nivel === nivel)
                   .map((o) => (
                     <div key={o.id} className="w-64 shrink-0">
-                      <ObjetivoCard objetivo={o} objetivos={objetivos} compacto />
+                      <ObjetivoCard objetivo={o} objetivos={objetivos} metas={metas} compacto />
                     </div>
                   ))}
               </div>
@@ -223,7 +224,7 @@ export default function ObjetivosPage() {
                 ) : (
                   <div className="flex flex-col gap-2">
                     {deArea.map((o) => (
-                      <ObjetivoCard key={o.id} objetivo={o} objetivos={objetivos} compacto />
+                      <ObjetivoCard key={o.id} objetivo={o} objetivos={objetivos} metas={metas} compacto />
                     ))}
                   </div>
                 )}

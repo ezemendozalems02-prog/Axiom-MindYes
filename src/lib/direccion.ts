@@ -2,13 +2,21 @@ import type { Objetivo, Meta } from "@/types/direccion";
 import type { Tarea } from "@/types/accion";
 import { getHoyISO } from "@/lib/hoy";
 
-export function calcularProgresoObjetivo(objetivoId: string, objetivos: Objetivo[]): number {
+export function calcularProgresoObjetivo(objetivoId: string, objetivos: Objetivo[], metas: Meta[] = []): number {
+  const obj = objetivos.find((o) => o.id === objetivoId);
+  if (obj?.estado === "Cumplido") return 100;
+  if (obj?.estado === "Abandonado") return 0;
+
   const hijos = objetivos.filter((o) => o.objetivoPadreId === objetivoId);
   if (hijos.length === 0) {
-    const obj = objetivos.find((o) => o.id === objetivoId);
-    return obj?.estado === "Cumplido" ? 100 : obj?.estado === "Abandonado" ? 0 : 35;
+    const meta = metas.find((m) => m.objetivoId === objetivoId);
+    if (meta && meta.valorObjetivo > 0) {
+      return Math.min(100, Math.round((meta.valorActual / meta.valorObjetivo) * 100));
+    }
+    return 35;
   }
-  const promedio = hijos.reduce((acc, h) => acc + calcularProgresoObjetivo(h.id, objetivos), 0) / hijos.length;
+  const promedio =
+    hijos.reduce((acc, h) => acc + calcularProgresoObjetivo(h.id, objetivos, metas), 0) / hijos.length;
   return Math.round(promedio);
 }
 

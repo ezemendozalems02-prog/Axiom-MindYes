@@ -1,4 +1,4 @@
-import type { Gasto, Ingreso } from "@/types/finanzas";
+import type { Deuda, Gasto, Ingreso } from "@/types/finanzas";
 import { getHoyISO } from "@/lib/hoy";
 
 export const VALOR_HORA_USD = 35;
@@ -49,6 +49,45 @@ export function flujoProyectado30Dias(ingresos: Ingreso[], gastos: Gasto[]): num
     .reduce((acc, g) => acc + g.monto, 0);
 
   return Math.round(ingresosProyectados - gastosFijosMensuales);
+}
+
+export function calcularSaldoDeuda(deuda: Deuda): number {
+  const pagado = deuda.pagos.reduce((acc, p) => acc + p.monto, 0);
+  return Math.max(0, Math.round((deuda.montoOriginal - pagado) * 100) / 100);
+}
+
+export function calcularProgresoDeuda(deuda: Deuda): number {
+  if (deuda.montoOriginal <= 0) return 100;
+  const pagado = deuda.pagos.reduce((acc, p) => acc + p.monto, 0);
+  return Math.min(100, Math.round((pagado / deuda.montoOriginal) * 100));
+}
+
+export function calcularProximoVencimiento(deuda: Deuda, hoy: string): string {
+  const fechaHoy = new Date(hoy + "T00:00:00");
+  const candidato = new Date(fechaHoy.getFullYear(), fechaHoy.getMonth(), deuda.diaVencimiento);
+  if (candidato < fechaHoy) candidato.setMonth(candidato.getMonth() + 1);
+  return getHoyISO(candidato);
+}
+
+export function calcularDiasHastaVencimiento(deuda: Deuda, hoy: string): number {
+  const fechaHoy = new Date(hoy + "T00:00:00");
+  const vencimiento = new Date(calcularProximoVencimiento(deuda, hoy) + "T00:00:00");
+  return Math.round((vencimiento.getTime() - fechaHoy.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+export function calcularTotalDeudaPendiente(deudas: Deuda[]): number {
+  return deudas
+    .filter((d) => d.estado === "Activa")
+    .reduce((acc, d) => acc + calcularSaldoDeuda(d), 0);
+}
+
+export function calcularCuotasMensualesActivas(deudas: Deuda[]): number {
+  return deudas.filter((d) => d.estado === "Activa").reduce((acc, d) => acc + d.cuotaMensual, 0);
+}
+
+export function calcularRatioDeudaIngreso(deudas: Deuda[], ingresoMensual: number): number {
+  if (ingresoMensual <= 0) return 0;
+  return Math.round((calcularCuotasMensualesActivas(deudas) / ingresoMensual) * 100);
 }
 
 export function generarSerieMensual(

@@ -1,8 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { setCuentaActiva } from "@/lib/storage-por-cuenta";
+
+export const DEMO_EMAIL = "demo@axiommind.app";
+const DEMO_PASSWORD = "AxiomDemo2025!";
+const DEMO_NOMBRE = "Matías Guerrero";
+
 type AuthStore = {
   isAuthenticated: boolean;
+  esCuentaDemo: boolean;
+  nombreSesion: string;
+  emailSesion: string;
   nombre: string;
   email: string;
   password: string;
@@ -16,21 +25,55 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       isAuthenticated: false,
+      esCuentaDemo: false,
+      nombreSesion: "Neo",
+      emailSesion: "ezemendozalems02@gmail.com",
       nombre: "Neo",
       email: "ezemendozalems02@gmail.com",
       password: "Hola1234@",
 
       login: (email, password) => {
-        const ok = get().email.toLowerCase() === email.trim().toLowerCase() && get().password === password;
-        if (ok) set({ isAuthenticated: true });
+        const correo = email.trim().toLowerCase();
+
+        if (correo === DEMO_EMAIL && password === DEMO_PASSWORD) {
+          setCuentaActiva("demo");
+          set({
+            isAuthenticated: true,
+            esCuentaDemo: true,
+            nombreSesion: DEMO_NOMBRE,
+            emailSesion: DEMO_EMAIL,
+          });
+          return true;
+        }
+
+        const ok = get().email.toLowerCase() === correo && get().password === password;
+        if (ok) {
+          setCuentaActiva("real");
+          set({
+            isAuthenticated: true,
+            esCuentaDemo: false,
+            nombreSesion: get().nombre,
+            emailSesion: get().email,
+          });
+        }
         return ok;
       },
 
-      logout: () => set({ isAuthenticated: false }),
+      logout: () => set({ isAuthenticated: false, esCuentaDemo: false }),
 
-      actualizarCuenta: (cambios) => set((state) => ({ ...state, ...cambios })),
+      actualizarCuenta: (cambios) =>
+        set((state) => {
+          if (state.esCuentaDemo) return state;
+          return {
+            ...state,
+            ...cambios,
+            nombreSesion: cambios.nombre ?? state.nombreSesion,
+            emailSesion: cambios.email ?? state.emailSesion,
+          };
+        }),
 
       cambiarPassword: (actual, nueva) => {
+        if (get().esCuentaDemo) return false;
         if (get().password !== actual) return false;
         set({ password: nueva });
         return true;

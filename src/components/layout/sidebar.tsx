@@ -15,7 +15,7 @@ import {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const nombre = useAuthStore((s) => s.nombre);
+  const nombre = useAuthStore((s) => s.nombreSesion);
 
   return (
     <>

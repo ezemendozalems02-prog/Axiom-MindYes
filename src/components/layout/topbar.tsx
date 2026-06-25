@@ -14,7 +14,7 @@ export function Topbar({ children }: { children?: React.ReactNode }) {
   const setOpenBusqueda = useCommandPaletteStore((s) => s.setOpen);
   const setOpenCaptura = useQuickCaptureStore((s) => s.setOpen);
   const setOpenNav = useMobileNavStore((s) => s.setOpen);
-  const nombre = useAuthStore((s) => s.nombre);
+  const nombre = useAuthStore((s) => s.nombreSesion);
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-3 sm:gap-4 sm:px-5">

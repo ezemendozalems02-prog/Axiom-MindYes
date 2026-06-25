@@ -51,12 +51,14 @@ export default function CentroDeControlPage() {
   const proyectos = useAccionStore((s) => s.proyectos);
   const eventosCalendario = useAccionStore((s) => s.eventosCalendario);
   const objetivos = useDireccionStore((s) => s.objetivos);
+  const metas = useDireccionStore((s) => s.metas);
   const ingresos = useFinanzasStore((s) => s.ingresos);
   const objetivosFinancieros = useFinanzasStore((s) => s.objetivos);
   const areasConConsistencia = useAreasDeVidaConectadas();
   const { indices, niveles } = useMotorInteligencia();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMomento(getMomentoDelDia());
     setMounted(true);
   }, []);
@@ -111,6 +113,7 @@ export default function CentroDeControlPage() {
 
   const progresoEnVivo = calcularProgresoEnVivo({
     objetivos,
+    metas,
     proyectos,
     tareas,
     habitos: habitosIdentidad,

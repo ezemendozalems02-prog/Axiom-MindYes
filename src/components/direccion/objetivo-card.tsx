@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { Objetivo } from "@/types/direccion";
+import type { Meta, Objetivo } from "@/types/direccion";
 import { Badge } from "@/components/ui/badge";
 import { calcularProgresoObjetivo } from "@/lib/direccion";
 
@@ -14,13 +14,15 @@ const ESTADO_VARIANT: Record<Objetivo["estado"], "default" | "secondary" | "outl
 export function ObjetivoCard({
   objetivo,
   objetivos,
+  metas = [],
   compacto = false,
 }: {
   objetivo: Objetivo;
   objetivos: Objetivo[];
+  metas?: Meta[];
   compacto?: boolean;
 }) {
-  const progreso = calcularProgresoObjetivo(objetivo.id, objetivos);
+  const progreso = calcularProgresoObjetivo(objetivo.id, objetivos, metas);
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">

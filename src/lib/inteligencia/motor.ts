@@ -1,10 +1,15 @@
 import type { Proyecto, Tarea } from "@/types/accion";
 import type { EstadoHabitoDia, Habito } from "@/types/identidad";
 import type { Decision, ItemBandejaMental } from "@/types/mente";
-import type { Gasto, Ingreso, ObjetivosFinancieros } from "@/types/finanzas";
+import type { Deuda, Gasto, Ingreso, ObjetivosFinancieros } from "@/types/finanzas";
 import type { Indices, InsightMotor, NivelesMotor } from "@/types/inteligencia";
 import { calcularConsistencia4Semanas, calcularRachaActual } from "@/lib/habitos";
-import { mesDe, sumarIngresosDelMes } from "@/lib/finanzas";
+import {
+  calcularDiasHastaVencimiento,
+  calcularRatioDeudaIngreso,
+  mesDe,
+  sumarIngresosDelMes,
+} from "@/lib/finanzas";
 
 const DIAS_PROYECTO_ESTANCADO = 4;
 
@@ -37,6 +42,7 @@ export function generarNivelesMotor(datos: {
   decisiones: Decision[];
   ingresos: Ingreso[];
   gastos: Gasto[];
+  deudas: Deuda[];
   objetivos: ObjetivosFinancieros;
   indices: Indices;
   hoy: string;
@@ -49,6 +55,7 @@ export function generarNivelesMotor(datos: {
     bandejaMental,
     decisiones,
     ingresos,
+    deudas,
     objetivos,
     indices,
     hoy,
@@ -95,6 +102,19 @@ export function generarNivelesMotor(datos: {
   if (bandejaMental.length > 5 && indices.claridad < 70) {
     comprension.push(
       "Tu carga mental está alta: la bandeja mental acumulada está bajando tu índice de claridad."
+    );
+  }
+  const deudasVencidas = deudas.filter(
+    (d) => d.estado === "Activa" && calcularDiasHastaVencimiento(d, hoy) < 0
+  );
+  const ratioDeudaIngreso = calcularRatioDeudaIngreso(deudas, ingresosMes);
+  if (deudasVencidas.length > 0) {
+    comprension.push(
+      `Tenés ${deudasVencidas.length} deuda(s) vencida(s) sin pagar: ${deudasVencidas.map((d) => d.nombre).join(", ")}.`
+    );
+  } else if (ratioDeudaIngreso > 40) {
+    comprension.push(
+      `Tus cuotas de deuda representan el ${ratioDeudaIngreso}% de tu ingreso mensual — nivel de endeudamiento crítico.`
     );
   }
   if (comprension.length === 0) {
@@ -144,11 +164,13 @@ export function generarNivelesMotor(datos: {
   recomendacion.push({
     id: "rec-inmediata",
     tipo: "accion_inmediata",
-    texto: tareaRapida
-      ? `Hacé esto ahora, te toma menos de 5 minutos: "${tareaRapida.titulo}".`
-      : bandejaMental.length > 0
-        ? `Vaciá tu bandeja mental: tenés ${bandejaMental.length} pendiente(s) sin clasificar.`
-        : "No hay acciones inmediatas pendientes. Buen trabajo.",
+    texto: deudasVencidas[0]
+      ? `Pagá "${deudasVencidas[0].nombre}" — está vencida desde hace ${Math.abs(calcularDiasHastaVencimiento(deudasVencidas[0], hoy))} día(s).`
+      : tareaRapida
+        ? `Hacé esto ahora, te toma menos de 5 minutos: "${tareaRapida.titulo}".`
+        : bandejaMental.length > 0
+          ? `Vaciá tu bandeja mental: tenés ${bandejaMental.length} pendiente(s) sin clasificar.`
+          : "No hay acciones inmediatas pendientes. Buen trabajo.",
   });
 
   const tareaDelDia = [...tareasHoy]

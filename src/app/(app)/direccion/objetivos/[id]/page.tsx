@@ -19,6 +19,7 @@ export default function ObjetivoDetallePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const objetivos = useDireccionStore((s) => s.objetivos);
+  const metas = useDireccionStore((s) => s.metas);
   const actualizarObjetivo = useDireccionStore((s) => s.actualizarObjetivo);
   const eliminarObjetivo = useDireccionStore((s) => s.eliminarObjetivo);
   const proyectos = useAccionStore((s) => s.proyectos);
@@ -33,7 +34,7 @@ export default function ObjetivoDetallePage() {
 
   const padre = objetivos.find((o) => o.id === objetivo.objetivoPadreId);
   const hijos = hijosDe(objetivo.id, objetivos);
-  const progreso = calcularProgresoObjetivo(objetivo.id, objetivos);
+  const progreso = calcularProgresoObjetivo(objetivo.id, objetivos, metas);
   const proyectosRelacionados = proyectos.filter((p) => objetivo.proyectosIds.includes(p.id));
   const habitosRelacionados = habitos.filter((h) => objetivo.habitosIds.includes(h.id));
 
@@ -182,7 +183,7 @@ export default function ObjetivoDetallePage() {
         <div className="flex flex-col gap-2">
           <span className="text-xs font-medium uppercase tracking-wide text-text-muted">Se descompone en</span>
           {hijos.map((h) => (
-            <ObjetivoCard key={h.id} objetivo={h} objetivos={objetivos} compacto />
+            <ObjetivoCard key={h.id} objetivo={h} objetivos={objetivos} metas={metas} compacto />
           ))}
         </div>
       )}

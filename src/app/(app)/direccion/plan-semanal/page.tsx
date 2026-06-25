@@ -30,7 +30,7 @@ export default function PlanSemanalPage() {
   const habitos = useIdentidadStore((s) => s.habitos);
 
   const ultimoPlan = planesSemanales[0];
-  const { inicio, fin } = useMemo(inicioDeSemana, []);
+  const { inicio, fin } = useMemo(() => inicioDeSemana(), []);
   const yaHechaEstaSemana = ultimoPlan?.semanaInicio === inicio;
 
   const [paso, setPaso] = useState(0);

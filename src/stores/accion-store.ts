@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { Archivo, EstadoTarea, EventoCalendario, Proyecto, Tarea } from "@/types/accion";
 import {
@@ -6,6 +7,7 @@ import {
   proyectos as proyectosIniciales,
   tareas as tareasIniciales,
 } from "@/lib/mock/accion";
+import { crearStorageScopedPorCuenta } from "@/lib/storage-por-cuenta";
 
 type AccionStore = {
   tareas: Tarea[];
@@ -27,69 +29,77 @@ type AccionStore = {
   eliminarEvento: (id: string) => void;
 };
 
-export const useAccionStore = create<AccionStore>((set) => ({
-  tareas: tareasIniciales,
-  proyectos: proyectosIniciales,
-  archivos: [],
-  eventosCalendario: eventosCalendarioIniciales,
+export const useAccionStore = create<AccionStore>()(
+  persist(
+    (set) => ({
+      tareas: tareasIniciales,
+      proyectos: proyectosIniciales,
+      archivos: [],
+      eventosCalendario: eventosCalendarioIniciales,
 
-  agregarTarea: (tarea) =>
-    set((state) => ({ tareas: [...state.tareas, tarea] })),
+      agregarTarea: (tarea) =>
+        set((state) => ({ tareas: [...state.tareas, tarea] })),
 
-  agregarProyecto: (proyecto) =>
-    set((state) => ({ proyectos: [...state.proyectos, proyecto] })),
+      agregarProyecto: (proyecto) =>
+        set((state) => ({ proyectos: [...state.proyectos, proyecto] })),
 
-  actualizarProyecto: (id, cambios) =>
-    set((state) => ({
-      proyectos: state.proyectos.map((p) => (p.id === id ? { ...p, ...cambios } : p)),
-    })),
+      actualizarProyecto: (id, cambios) =>
+        set((state) => ({
+          proyectos: state.proyectos.map((p) => (p.id === id ? { ...p, ...cambios } : p)),
+        })),
 
-  eliminarProyecto: (id) =>
-    set((state) => ({
-      proyectos: state.proyectos.filter((p) => p.id !== id),
-      tareas: state.tareas.map((t) => (t.proyectoId === id ? { ...t, proyectoId: null } : t)),
-    })),
+      eliminarProyecto: (id) =>
+        set((state) => ({
+          proyectos: state.proyectos.filter((p) => p.id !== id),
+          tareas: state.tareas.map((t) => (t.proyectoId === id ? { ...t, proyectoId: null } : t)),
+        })),
 
-  actualizarTarea: (id, cambios) =>
-    set((state) => ({
-      tareas: state.tareas.map((t) => (t.id === id ? { ...t, ...cambios } : t)),
-    })),
+      actualizarTarea: (id, cambios) =>
+        set((state) => ({
+          tareas: state.tareas.map((t) => (t.id === id ? { ...t, ...cambios } : t)),
+        })),
 
-  eliminarTarea: (id) =>
-    set((state) => ({ tareas: state.tareas.filter((t) => t.id !== id) })),
+      eliminarTarea: (id) =>
+        set((state) => ({ tareas: state.tareas.filter((t) => t.id !== id) })),
 
-  moverEstado: (id, estado) =>
-    set((state) => ({
-      tareas: state.tareas.map((t) => (t.id === id ? { ...t, estado } : t)),
-    })),
+      moverEstado: (id, estado) =>
+        set((state) => ({
+          tareas: state.tareas.map((t) => (t.id === id ? { ...t, estado } : t)),
+        })),
 
-  toggleCompletada: (id) =>
-    set((state) => ({
-      tareas: state.tareas.map((t) =>
-        t.id === id
-          ? { ...t, estado: t.estado === "completado" ? "sin_empezar" : "completado" }
-          : t
-      ),
-    })),
+      toggleCompletada: (id) =>
+        set((state) => ({
+          tareas: state.tareas.map((t) =>
+            t.id === id
+              ? { ...t, estado: t.estado === "completado" ? "sin_empezar" : "completado" }
+              : t
+          ),
+        })),
 
-  registrarTiempo: (id, minutos) =>
-    set((state) => ({
-      tareas: state.tareas.map((t) =>
-        t.id === id ? { ...t, tiempoRealMin: t.tiempoRealMin + minutos } : t
-      ),
-    })),
+      registrarTiempo: (id, minutos) =>
+        set((state) => ({
+          tareas: state.tareas.map((t) =>
+            t.id === id ? { ...t, tiempoRealMin: t.tiempoRealMin + minutos } : t
+          ),
+        })),
 
-  agregarArchivo: (archivo) =>
-    set((state) => ({ archivos: [...state.archivos, archivo] })),
+      agregarArchivo: (archivo) =>
+        set((state) => ({ archivos: [...state.archivos, archivo] })),
 
-  eliminarArchivo: (id) =>
-    set((state) => ({ archivos: state.archivos.filter((a) => a.id !== id) })),
+      eliminarArchivo: (id) =>
+        set((state) => ({ archivos: state.archivos.filter((a) => a.id !== id) })),
 
-  agregarEvento: (evento) =>
-    set((state) => ({ eventosCalendario: [...state.eventosCalendario, evento] })),
+      agregarEvento: (evento) =>
+        set((state) => ({ eventosCalendario: [...state.eventosCalendario, evento] })),
 
-  eliminarEvento: (id) =>
-    set((state) => ({
-      eventosCalendario: state.eventosCalendario.filter((e) => e.id !== id),
-    })),
-}));
+      eliminarEvento: (id) =>
+        set((state) => ({
+          eventosCalendario: state.eventosCalendario.filter((e) => e.id !== id),
+        })),
+    }),
+    {
+      name: "axiom-mind-accion",
+      storage: createJSONStorage(() => crearStorageScopedPorCuenta()),
+    }
+  )
+);
