@@ -67,6 +67,16 @@ export const useAuthStore = create<AuthStore>()(
         if (correo === DEMO_EMAIL) return { ok: false, error: "Ese email está reservado." };
 
         const supabase = crearClienteSupabaseBrowser();
+
+        const { data: config } = await supabase
+          .from("system_config")
+          .select("valor")
+          .eq("clave", "signups_habilitados")
+          .single();
+        if (config && config.valor === false) {
+          return { ok: false, error: "El registro de nuevas cuentas está deshabilitado temporalmente." };
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email: correo,
           password,
