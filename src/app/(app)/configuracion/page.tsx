@@ -7,7 +7,6 @@ import { Check, LogOut, Mail, RotateCcw, ShieldCheck, User } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store";
 import { useCuentaMetaStore } from "@/stores/cuenta-meta-store";
 import { aplicarSeedDemo } from "@/lib/demo/seed-demo-user";
-import { aplicarDatosRealesEzequiel } from "@/lib/seed/datos-reales-ezequiel";
 import { Topbar } from "@/components/layout/topbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -73,14 +72,6 @@ export default function ConfiguracionPage() {
     setTimeout(() => setConfirmacionReset(false), 2500);
   }
 
-  const [cargandoSeedReal, setCargandoSeedReal] = useState(false);
-  async function cargarDatosRealesTemp() {
-    setCargandoSeedReal(true);
-    await aplicarDatosRealesEzequiel();
-    setCargandoSeedReal(false);
-    alert("Listo, ya están tus datos cargados.");
-  }
-
   return (
     <>
       <Topbar>
@@ -89,16 +80,6 @@ export default function ConfiguracionPage() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
-          {!esCuentaDemo && (
-            <button
-              onClick={cargarDatosRealesTemp}
-              disabled={cargandoSeedReal}
-              className="rounded-md border border-warning bg-warning/10 px-3 py-2 text-xs text-warning"
-            >
-              {cargandoSeedReal ? "Cargando..." : "[TEMP] Cargar mis datos reales"}
-            </button>
-          )}
-
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
             <div className="flex items-center gap-2">
               <User className="size-4 text-text-muted" />
