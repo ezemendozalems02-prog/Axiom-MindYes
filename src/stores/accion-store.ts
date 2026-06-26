@@ -19,7 +19,8 @@ import {
 } from "@/lib/supabase/accion-sync";
 
 function esCuentaReal() {
-  return getCuentaActiva() === "real";
+  const cuenta = getCuentaActiva();
+  return cuenta !== "demo" && cuenta !== "anon";
 }
 
 type AccionStore = {

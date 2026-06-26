@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, User } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth-store";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const login = useAuthStore((s) => s.login);
+  const registrarse = useAuthStore((s) => s.registrarse);
 
+  const [modo, setModo] = useState<"login" | "registro">("login");
+  const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mostrarPassword, setMostrarPassword] = useState(false);
@@ -20,13 +23,25 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setCargando(true);
-    const ok = await login(email, password);
-    if (ok) {
-      // Navegación dura: cada cuenta tiene su propio namespace de datos en
-      // localStorage y los stores deben rehidratar desde cero al cambiar de cuenta.
+
+    if (modo === "login") {
+      const ok = await login(email, password);
+      if (ok) {
+        // Navegación dura: cada cuenta tiene su propio namespace de datos en
+        // localStorage y los stores deben rehidratar desde cero al cambiar de cuenta.
+        window.location.href = "/centro-de-control";
+      } else {
+        setError("Email o contraseña incorrectos.");
+        setCargando(false);
+      }
+      return;
+    }
+
+    const resultado = await registrarse(email, password, nombre);
+    if (resultado.ok) {
       window.location.href = "/centro-de-control";
     } else {
-      setError("Email o contraseña incorrectos.");
+      setError(resultado.error ?? "No se pudo crear la cuenta.");
       setCargando(false);
     }
   }
@@ -44,14 +59,53 @@ export default function LoginPage() {
             </span>
           </div>
           <p className="text-sm text-text-secondary">
-            Tu Sistema Operativo Personal. Iniciá sesión para continuar.
+            {modo === "login"
+              ? "Tu Sistema Operativo Personal. Iniciá sesión para continuar."
+              : "Creá tu cuenta y arrancá tu prueba gratuita de 14 días."}
           </p>
+        </div>
+
+        <div className="flex items-center justify-center gap-4 text-sm">
+          <button
+            type="button"
+            onClick={() => { setModo("login"); setError(null); }}
+            className={modo === "login" ? "font-semibold text-foreground" : "text-text-muted"}
+          >
+            Iniciar sesión
+          </button>
+          <span className="text-border">/</span>
+          <button
+            type="button"
+            onClick={() => { setModo("registro"); setError(null); }}
+            className={modo === "registro" ? "font-semibold text-foreground" : "text-text-muted"}
+          >
+            Crear cuenta
+          </button>
         </div>
 
         <form
           onSubmit={onSubmit}
           className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl shadow-black/40"
         >
+          {modo === "registro" && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
+                Nombre
+              </label>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-popover px-3">
+                <User className="size-3.5 shrink-0 text-text-muted" />
+                <Input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Tu nombre"
+                  required
+                  className="h-10 border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-text-muted uppercase tracking-wide">
               Email
@@ -81,6 +135,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                minLength={modo === "registro" ? 6 : undefined}
                 className="h-10 border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
               />
               <button
@@ -101,13 +156,15 @@ export default function LoginPage() {
           )}
 
           <Button type="submit" disabled={cargando} className="mt-1 h-10">
-            {cargando ? "Verificando…" : "Iniciar sesión"}
+            {cargando ? "Verificando…" : modo === "login" ? "Iniciar sesión" : "Crear cuenta y empezar"}
             {!cargando && <ArrowRight data-icon="inline-end" />}
           </Button>
         </form>
 
         <p className="text-center text-xs text-text-muted">
-          Tus credenciales se gestionan desde Configuración una vez dentro del sistema.
+          {modo === "login"
+            ? "Tus credenciales se gestionan desde Configuración una vez dentro del sistema."
+            : "14 días gratis, sin tarjeta. Podés cancelar cuando quieras."}
         </p>
       </div>
     </div>

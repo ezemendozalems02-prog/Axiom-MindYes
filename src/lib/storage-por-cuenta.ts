@@ -1,12 +1,14 @@
 import type { StateStorage } from "zustand/middleware";
 
-export type CuentaId = "real" | "demo";
+// "demo" para la cuenta demo, o el user_id real de Supabase para cada cuenta real
+// (así cada usuario que se registre tiene su propio namespace, no comparten "real").
+export type CuentaId = string;
 
 const CLAVE_CUENTA_ACTIVA = "axiom-mind-cuenta-activa";
 
 export function getCuentaActiva(): CuentaId {
-  if (typeof window === "undefined") return "real";
-  return window.localStorage.getItem(CLAVE_CUENTA_ACTIVA) === "demo" ? "demo" : "real";
+  if (typeof window === "undefined") return "anon";
+  return window.localStorage.getItem(CLAVE_CUENTA_ACTIVA) ?? "anon";
 }
 
 export function setCuentaActiva(cuenta: CuentaId): void {
@@ -15,9 +17,10 @@ export function setCuentaActiva(cuenta: CuentaId): void {
 }
 
 /**
- * Storage de zustand que namespacea cada clave por la cuenta activa (real | demo),
- * para que cada cuenta tenga sus propios datos aislados en localStorage —
- * loguearse como una no pisa ni mezcla los datos de la otra.
+ * Storage de zustand que namespacea cada clave por la cuenta activa
+ * (id real de Supabase, o "demo"), para que cada cuenta tenga sus propios
+ * datos aislados en localStorage — loguearse como una no pisa ni mezcla
+ * los datos de otra.
  */
 export function crearStorageScopedPorCuenta(): StateStorage {
   return {

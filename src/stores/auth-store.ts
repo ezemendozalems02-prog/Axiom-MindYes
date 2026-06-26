@@ -17,6 +17,7 @@ type AuthStore = {
   email: string;
   password: string;
   login: (email: string, password: string) => Promise<boolean>;
+  registrarse: (email: string, password: string, nombre: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   actualizarCuenta: (cambios: { nombre?: string; email?: string }) => void;
   cambiarPassword: (actual: string, nueva: string) => boolean;
@@ -48,17 +49,47 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         const supabase = crearClienteSupabaseBrowser();
-        const { error } = await supabase.auth.signInWithPassword({ email: correo, password });
-        if (error) return false;
+        const { data, error } = await supabase.auth.signInWithPassword({ email: correo, password });
+        if (error || !data.user) return false;
 
-        setCuentaActiva("real");
+        setCuentaActiva(data.user.id);
         set({
           isAuthenticated: true,
           esCuentaDemo: false,
-          nombreSesion: get().nombre,
+          nombreSesion: (data.user.user_metadata?.full_name as string) || get().nombre,
           emailSesion: correo,
         });
         return true;
+      },
+
+      registrarse: async (email, password, nombre) => {
+        const correo = email.trim().toLowerCase();
+        if (correo === DEMO_EMAIL) return { ok: false, error: "Ese email está reservado." };
+
+        const supabase = crearClienteSupabaseBrowser();
+        const { data, error } = await supabase.auth.signUp({
+          email: correo,
+          password,
+          options: { data: { full_name: nombre.trim() } },
+        });
+        if (error) return { ok: false, error: error.message };
+        if (!data.user) return { ok: false, error: "No se pudo crear la cuenta." };
+
+        if (!data.session) {
+          return {
+            ok: false,
+            error: "Cuenta creada. Confirmá tu email antes de iniciar sesión.",
+          };
+        }
+
+        setCuentaActiva(data.user.id);
+        set({
+          isAuthenticated: true,
+          esCuentaDemo: false,
+          nombreSesion: nombre.trim(),
+          emailSesion: correo,
+        });
+        return { ok: true };
       },
 
       logout: () => {
