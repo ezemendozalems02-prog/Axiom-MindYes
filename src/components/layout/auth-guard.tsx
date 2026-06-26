@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useCuentaMetaStore } from "@/stores/cuenta-meta-store";
 import { useAccionStore } from "@/stores/accion-store";
 import { aplicarSeedDemo } from "@/lib/demo/seed-demo-user";
+import { crearClienteSupabaseBrowser } from "@/lib/supabase/client";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -15,6 +16,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const seedDemoAplicado = useCuentaMetaStore((s) => s.seedDemoAplicado);
   const marcarSeedDemoAplicado = useCuentaMetaStore((s) => s.marcarSeedDemoAplicado);
   const [hidratado, setHidratado] = useState(false);
+  const [onboardingChecado, setOnboardingChecado] = useState(false);
+  const [necesitaOnboarding, setNecesitaOnboarding] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -40,7 +43,38 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [hidratado, isAuthenticated, esCuentaDemo]);
 
-  if (!hidratado || !isAuthenticated) return null;
+  useEffect(() => {
+    if (!hidratado || !isAuthenticated || esCuentaDemo) {
+      setOnboardingChecado(true);
+      return;
+    }
+    let activo = true;
+    (async () => {
+      const supabase = crearClienteSupabaseBrowser();
+      const { data: sesion } = await supabase.auth.getSession();
+      if (!sesion.session) {
+        if (activo) setOnboardingChecado(true);
+        return;
+      }
+      const { data: perfil } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", sesion.session.user.id)
+        .single();
+      if (!activo) return;
+      setNecesitaOnboarding(perfil ? !perfil.onboarding_completed : false);
+      setOnboardingChecado(true);
+    })();
+    return () => { activo = false; };
+  }, [hidratado, isAuthenticated, esCuentaDemo]);
+
+  useEffect(() => {
+    if (onboardingChecado && necesitaOnboarding) {
+      router.replace("/onboarding");
+    }
+  }, [onboardingChecado, necesitaOnboarding, router]);
+
+  if (!hidratado || !isAuthenticated || !onboardingChecado || necesitaOnboarding) return null;
 
   return <>{children}</>;
 }
