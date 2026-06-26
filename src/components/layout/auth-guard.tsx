@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuthStore } from "@/stores/auth-store";
 import { useCuentaMetaStore } from "@/stores/cuenta-meta-store";
+import { useAccionStore } from "@/stores/accion-store";
 import { aplicarSeedDemo } from "@/lib/demo/seed-demo-user";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       marcarSeedDemoAplicado();
     }
   }, [hidratado, isAuthenticated, esCuentaDemo, seedDemoAplicado, marcarSeedDemoAplicado]);
+
+  useEffect(() => {
+    if (hidratado && isAuthenticated && !esCuentaDemo) {
+      useAccionStore.getState().cargarDesdeSupabase();
+    }
+  }, [hidratado, isAuthenticated, esCuentaDemo]);
 
   if (!hidratado || !isAuthenticated) return null;
 

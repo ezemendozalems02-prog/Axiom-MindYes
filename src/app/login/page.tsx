@@ -16,21 +16,19 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setCargando(true);
-    setTimeout(() => {
-      const ok = login(email, password);
-      if (ok) {
-        // Navegación dura: cada cuenta tiene su propio namespace de datos en
-        // localStorage y los stores deben rehidratar desde cero al cambiar de cuenta.
-        window.location.href = "/centro-de-control";
-      } else {
-        setError("Email o contraseña incorrectos.");
-        setCargando(false);
-      }
-    }, 350);
+    const ok = await login(email, password);
+    if (ok) {
+      // Navegación dura: cada cuenta tiene su propio namespace de datos en
+      // localStorage y los stores deben rehidratar desde cero al cambiar de cuenta.
+      window.location.href = "/centro-de-control";
+    } else {
+      setError("Email o contraseña incorrectos.");
+      setCargando(false);
+    }
   }
 
   return (

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { setCuentaActiva } from "@/lib/storage-por-cuenta";
+import { crearClienteSupabaseBrowser } from "@/lib/supabase/client";
 
 export const DEMO_EMAIL = "demo@axiommind.app";
 const DEMO_PASSWORD = "AxiomDemo2025!";
@@ -15,7 +16,7 @@ type AuthStore = {
   nombre: string;
   email: string;
   password: string;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   actualizarCuenta: (cambios: { nombre?: string; email?: string }) => void;
   cambiarPassword: (actual: string, nueva: string) => boolean;
@@ -32,7 +33,7 @@ export const useAuthStore = create<AuthStore>()(
       email: "ezemendozalems02@gmail.com",
       password: "Hola1234@",
 
-      login: (email, password) => {
+      login: async (email, password) => {
         const correo = email.trim().toLowerCase();
 
         if (correo === DEMO_EMAIL && password === DEMO_PASSWORD) {
@@ -46,20 +47,24 @@ export const useAuthStore = create<AuthStore>()(
           return true;
         }
 
-        const ok = get().email.toLowerCase() === correo && get().password === password;
-        if (ok) {
-          setCuentaActiva("real");
-          set({
-            isAuthenticated: true,
-            esCuentaDemo: false,
-            nombreSesion: get().nombre,
-            emailSesion: get().email,
-          });
-        }
-        return ok;
+        const supabase = crearClienteSupabaseBrowser();
+        const { error } = await supabase.auth.signInWithPassword({ email: correo, password });
+        if (error) return false;
+
+        setCuentaActiva("real");
+        set({
+          isAuthenticated: true,
+          esCuentaDemo: false,
+          nombreSesion: get().nombre,
+          emailSesion: correo,
+        });
+        return true;
       },
 
-      logout: () => set({ isAuthenticated: false, esCuentaDemo: false }),
+      logout: () => {
+        crearClienteSupabaseBrowser().auth.signOut();
+        set({ isAuthenticated: false, esCuentaDemo: false });
+      },
 
       actualizarCuenta: (cambios) =>
         set((state) => {
