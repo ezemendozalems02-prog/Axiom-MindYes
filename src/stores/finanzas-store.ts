@@ -9,7 +9,18 @@ import {
   objetivosFinancieros as objetivosIniciales,
   patrimonio as patrimonioInicial,
 } from "@/lib/mock/finanzas";
-import { crearStorageScopedPorCuenta } from "@/lib/storage-por-cuenta";
+import { crearStorageScopedPorCuenta, esCuentaReal } from "@/lib/storage-por-cuenta";
+import { crearSyncJSON } from "@/lib/supabase/jsonb-sync";
+
+type DatosFinanzas = {
+  ingresos: Ingreso[];
+  gastos: Gasto[];
+  deudas: Deuda[];
+  objetivos: ObjetivosFinancieros;
+  patrimonio: Patrimonio;
+};
+
+const sync = crearSyncJSON<DatosFinanzas>("finanzas_data");
 
 type FinanzasStore = {
   ingresos: Ingreso[];
@@ -17,6 +28,7 @@ type FinanzasStore = {
   deudas: Deuda[];
   objetivos: ObjetivosFinancieros;
   patrimonio: Patrimonio;
+  cargarDesdeSupabase: () => Promise<void>;
   agregarIngreso: (ingreso: Ingreso) => void;
   agregarGasto: (gasto: Gasto) => void;
   agregarDeuda: (deuda: Deuda) => void;
@@ -30,54 +42,102 @@ type FinanzasStore = {
 
 export const useFinanzasStore = create<FinanzasStore>()(
   persist(
-    (set) => ({
-      ingresos: ingresosIniciales,
-      gastos: gastosIniciales,
-      deudas: deudasIniciales,
-      objetivos: objetivosIniciales,
-      patrimonio: patrimonioInicial,
+    (set, get) => {
+      function sincronizar() {
+        if (!esCuentaReal()) return;
+        const s = get();
+        sync.guardar({
+          ingresos: s.ingresos,
+          gastos: s.gastos,
+          deudas: s.deudas,
+          objetivos: s.objetivos,
+          patrimonio: s.patrimonio,
+        });
+      }
 
-      agregarIngreso: (ingreso) =>
-        set((state) => ({ ingresos: [...state.ingresos, ingreso] })),
+      return {
+        ingresos: ingresosIniciales,
+        gastos: gastosIniciales,
+        deudas: deudasIniciales,
+        objetivos: objetivosIniciales,
+        patrimonio: patrimonioInicial,
 
-      agregarGasto: (gasto) =>
-        set((state) => ({ gastos: [...state.gastos, gasto] })),
+        cargarDesdeSupabase: async () => {
+          if (!esCuentaReal()) return;
+          const datos = await sync.cargar();
+          if (datos) {
+            set({
+              ingresos: datos.ingresos,
+              gastos: datos.gastos,
+              deudas: datos.deudas,
+              objetivos: datos.objetivos,
+              patrimonio: datos.patrimonio,
+            });
+          } else {
+            sincronizar();
+          }
+        },
 
-      agregarDeuda: (deuda) =>
-        set((state) => ({ deudas: [...state.deudas, deuda] })),
+        agregarIngreso: (ingreso) => {
+          set((state) => ({ ingresos: [...state.ingresos, ingreso] }));
+          sincronizar();
+        },
 
-      registrarPagoDeuda: (id, monto, fecha) =>
-        set((state) => ({
-          deudas: state.deudas.map((d) => {
-            if (d.id !== id) return d;
-            const pagos = [...d.pagos, { fecha, monto }];
-            const pagado = pagos.reduce((acc, p) => acc + p.monto, 0);
-            return { ...d, pagos, estado: pagado >= d.montoOriginal ? "Pagada" : "Activa" };
-          }),
-        })),
+        agregarGasto: (gasto) => {
+          set((state) => ({ gastos: [...state.gastos, gasto] }));
+          sincronizar();
+        },
 
-      eliminarDeuda: (id) =>
-        set((state) => ({ deudas: state.deudas.filter((d) => d.id !== id) })),
+        agregarDeuda: (deuda) => {
+          set((state) => ({ deudas: [...state.deudas, deuda] }));
+          sincronizar();
+        },
 
-      actualizarObjetivos: (cambios) =>
-        set((state) => ({ objetivos: { ...state.objetivos, ...cambios } })),
+        registrarPagoDeuda: (id, monto, fecha) => {
+          set((state) => ({
+            deudas: state.deudas.map((d) => {
+              if (d.id !== id) return d;
+              const pagos = [...d.pagos, { fecha, monto }];
+              const pagado = pagos.reduce((acc, p) => acc + p.monto, 0);
+              return { ...d, pagos, estado: pagado >= d.montoOriginal ? "Pagada" : "Activa" };
+            }),
+          }));
+          sincronizar();
+        },
 
-      agregarInversion: (inversion) =>
-        set((state) => ({
-          objetivos: { ...state.objetivos, inversiones: [...state.objetivos.inversiones, inversion] },
-        })),
+        eliminarDeuda: (id) => {
+          set((state) => ({ deudas: state.deudas.filter((d) => d.id !== id) }));
+          sincronizar();
+        },
 
-      eliminarInversion: (id) =>
-        set((state) => ({
-          objetivos: {
-            ...state.objetivos,
-            inversiones: state.objetivos.inversiones.filter((i) => i.id !== id),
-          },
-        })),
+        actualizarObjetivos: (cambios) => {
+          set((state) => ({ objetivos: { ...state.objetivos, ...cambios } }));
+          sincronizar();
+        },
 
-      actualizarPatrimonio: (cambios) =>
-        set((state) => ({ patrimonio: { ...state.patrimonio, ...cambios } })),
-    }),
+        agregarInversion: (inversion) => {
+          set((state) => ({
+            objetivos: { ...state.objetivos, inversiones: [...state.objetivos.inversiones, inversion] },
+          }));
+          sincronizar();
+        },
+
+        eliminarInversion: (id) => {
+          set((state) => ({
+            objetivos: {
+              ...state.objetivos,
+              inversiones: state.objetivos.inversiones.filter((i) => i.id !== id),
+            },
+          }));
+          sincronizar();
+        },
+
+        actualizarPatrimonio: (cambios) => {
+          set((state) => ({ patrimonio: { ...state.patrimonio, ...cambios } }));
+          sincronizar();
+        },
+      };
+    },
     {
       name: "axiom-mind-finanzas",
       storage: createJSONStorage(() => crearStorageScopedPorCuenta()),

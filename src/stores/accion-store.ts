@@ -7,7 +7,7 @@ import {
   proyectos as proyectosIniciales,
   tareas as tareasIniciales,
 } from "@/lib/mock/accion";
-import { crearStorageScopedPorCuenta, getCuentaActiva } from "@/lib/storage-por-cuenta";
+import { crearStorageScopedPorCuenta, esCuentaReal } from "@/lib/storage-por-cuenta";
 import {
   fetchAccionDesdeSupabase,
   syncActualizarProyecto,
@@ -17,11 +17,6 @@ import {
   syncEliminarProyecto,
   syncEliminarTarea,
 } from "@/lib/supabase/accion-sync";
-
-function esCuentaReal() {
-  const cuenta = getCuentaActiva();
-  return cuenta !== "demo" && cuenta !== "anon";
-}
 
 type AccionStore = {
   tareas: Tarea[];

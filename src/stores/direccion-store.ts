@@ -9,7 +9,18 @@ import {
   revisionesMensuales as revisionesMensualesIniciales,
   visionPersonal as visionInicial,
 } from "@/lib/mock/direccion";
-import { crearStorageScopedPorCuenta } from "@/lib/storage-por-cuenta";
+import { crearStorageScopedPorCuenta, esCuentaReal } from "@/lib/storage-por-cuenta";
+import { crearSyncJSON } from "@/lib/supabase/jsonb-sync";
+
+type DatosDireccion = {
+  vision: VisionPersonal;
+  objetivos: Objetivo[];
+  metas: Meta[];
+  planes_semanales: PlanSemanal[];
+  revisiones_mensuales: RevisionMensual[];
+};
+
+const sync = crearSyncJSON<DatosDireccion>("direccion_data");
 
 type DireccionStore = {
   vision: VisionPersonal;
@@ -17,6 +28,7 @@ type DireccionStore = {
   metas: Meta[];
   planesSemanales: PlanSemanal[];
   revisionesMensuales: RevisionMensual[];
+  cargarDesdeSupabase: () => Promise<void>;
   actualizarVision: (cambios: Partial<VisionPersonal>) => void;
   agregarObjetivo: (objetivo: Objetivo) => void;
   actualizarObjetivo: (id: string, cambios: Partial<Objetivo>) => void;
@@ -29,45 +41,92 @@ type DireccionStore = {
 
 export const useDireccionStore = create<DireccionStore>()(
   persist(
-    (set) => ({
-      vision: visionInicial,
-      objetivos: objetivosIniciales,
-      metas: metasIniciales,
-      planesSemanales: planesSemanalesIniciales,
-      revisionesMensuales: revisionesMensualesIniciales,
+    (set, get) => {
+      function sincronizar() {
+        if (!esCuentaReal()) return;
+        const s = get();
+        sync.guardar({
+          vision: s.vision,
+          objetivos: s.objetivos,
+          metas: s.metas,
+          planes_semanales: s.planesSemanales,
+          revisiones_mensuales: s.revisionesMensuales,
+        });
+      }
 
-      actualizarVision: (cambios) =>
-        set((state) => ({ vision: { ...state.vision, ...cambios } })),
+      return {
+        vision: visionInicial,
+        objetivos: objetivosIniciales,
+        metas: metasIniciales,
+        planesSemanales: planesSemanalesIniciales,
+        revisionesMensuales: revisionesMensualesIniciales,
 
-      agregarObjetivo: (objetivo) =>
-        set((state) => ({ objetivos: [...state.objetivos, objetivo] })),
+        cargarDesdeSupabase: async () => {
+          if (!esCuentaReal()) return;
+          const datos = await sync.cargar();
+          if (datos) {
+            set({
+              vision: datos.vision,
+              objetivos: datos.objetivos,
+              metas: datos.metas,
+              planesSemanales: datos.planes_semanales,
+              revisionesMensuales: datos.revisiones_mensuales,
+            });
+          } else {
+            // Primera vez de esta cuenta en Supabase: subimos lo que ya hay en local.
+            sincronizar();
+          }
+        },
 
-      actualizarObjetivo: (id, cambios) =>
-        set((state) => ({
-          objetivos: state.objetivos.map((o) => (o.id === id ? { ...o, ...cambios } : o)),
-        })),
+        actualizarVision: (cambios) => {
+          set((state) => ({ vision: { ...state.vision, ...cambios } }));
+          sincronizar();
+        },
 
-      eliminarObjetivo: (id) =>
-        set((state) => ({ objetivos: state.objetivos.filter((o) => o.id !== id) })),
+        agregarObjetivo: (objetivo) => {
+          set((state) => ({ objetivos: [...state.objetivos, objetivo] }));
+          sincronizar();
+        },
 
-      agregarMeta: (meta) =>
-        set((state) => ({ metas: [...state.metas, meta] })),
+        actualizarObjetivo: (id, cambios) => {
+          set((state) => ({
+            objetivos: state.objetivos.map((o) => (o.id === id ? { ...o, ...cambios } : o)),
+          }));
+          sincronizar();
+        },
 
-      registrarValorMeta: (id, valor, fecha) =>
-        set((state) => ({
-          metas: state.metas.map((m) =>
-            m.id === id
-              ? { ...m, valorActual: valor, historial: [...m.historial, { fecha, valor }] }
-              : m
-          ),
-        })),
+        eliminarObjetivo: (id) => {
+          set((state) => ({ objetivos: state.objetivos.filter((o) => o.id !== id) }));
+          sincronizar();
+        },
 
-      agregarPlanSemanal: (plan) =>
-        set((state) => ({ planesSemanales: [plan, ...state.planesSemanales] })),
+        agregarMeta: (meta) => {
+          set((state) => ({ metas: [...state.metas, meta] }));
+          sincronizar();
+        },
 
-      agregarRevisionMensual: (revision) =>
-        set((state) => ({ revisionesMensuales: [revision, ...state.revisionesMensuales] })),
-    }),
+        registrarValorMeta: (id, valor, fecha) => {
+          set((state) => ({
+            metas: state.metas.map((m) =>
+              m.id === id
+                ? { ...m, valorActual: valor, historial: [...m.historial, { fecha, valor }] }
+                : m
+            ),
+          }));
+          sincronizar();
+        },
+
+        agregarPlanSemanal: (plan) => {
+          set((state) => ({ planesSemanales: [plan, ...state.planesSemanales] }));
+          sincronizar();
+        },
+
+        agregarRevisionMensual: (revision) => {
+          set((state) => ({ revisionesMensuales: [revision, ...state.revisionesMensuales] }));
+          sincronizar();
+        },
+      };
+    },
     {
       name: "axiom-mind-direccion",
       storage: createJSONStorage(() => crearStorageScopedPorCuenta()),

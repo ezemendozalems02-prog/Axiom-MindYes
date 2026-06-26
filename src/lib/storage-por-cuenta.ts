@@ -16,6 +16,12 @@ export function setCuentaActiva(cuenta: CuentaId): void {
   window.localStorage.setItem(CLAVE_CUENTA_ACTIVA, cuenta);
 }
 
+/** true si hay una cuenta real (no demo, no anónima) activa — esa es la que sincroniza con Supabase. */
+export function esCuentaReal(): boolean {
+  const cuenta = getCuentaActiva();
+  return cuenta !== "demo" && cuenta !== "anon";
+}
+
 /**
  * Storage de zustand que namespacea cada clave por la cuenta activa
  * (id real de Supabase, o "demo"), para que cada cuenta tenga sus propios

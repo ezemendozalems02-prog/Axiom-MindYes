@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCuentaMetaStore } from "@/stores/cuenta-meta-store";
 import { useAccionStore } from "@/stores/accion-store";
+import { useDireccionStore } from "@/stores/direccion-store";
+import { useIdentidadStore } from "@/stores/identidad-store";
+import { useNegocioStore } from "@/stores/negocio-store";
+import { useMenteStore } from "@/stores/mente-store";
+import { useFinanzasStore } from "@/stores/finanzas-store";
 import { aplicarSeedDemo } from "@/lib/demo/seed-demo-user";
 import { crearClienteSupabaseBrowser } from "@/lib/supabase/client";
 
@@ -40,6 +45,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hidratado && isAuthenticated && !esCuentaDemo) {
       useAccionStore.getState().cargarDesdeSupabase();
+      useDireccionStore.getState().cargarDesdeSupabase();
+      useIdentidadStore.getState().cargarDesdeSupabase();
+      useNegocioStore.getState().cargarDesdeSupabase();
+      useMenteStore.getState().cargarDesdeSupabase();
+      useFinanzasStore.getState().cargarDesdeSupabase();
     }
   }, [hidratado, isAuthenticated, esCuentaDemo]);
 

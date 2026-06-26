@@ -10,7 +10,8 @@ import {
   notas as notasIniciales,
 } from "@/lib/mock/mente";
 import { useAccionStore } from "@/stores/accion-store";
-import { crearStorageScopedPorCuenta } from "@/lib/storage-por-cuenta";
+import { crearStorageScopedPorCuenta, esCuentaReal } from "@/lib/storage-por-cuenta";
+import { crearSyncJSON } from "@/lib/supabase/jsonb-sync";
 
 function tareaBase(titulo: string, area: string): Tarea {
   return {
@@ -37,11 +38,22 @@ function tareaBase(titulo: string, area: string): Tarea {
   };
 }
 
+type DatosMente = {
+  bandeja: ItemBandejaMental[];
+  ideas: Idea[];
+  decisiones: Decision[];
+  notas: Nota[];
+};
+
+const sync = crearSyncJSON<DatosMente>("mente_data");
+
 type MenteStore = {
   bandeja: ItemBandejaMental[];
   ideas: Idea[];
   decisiones: Decision[];
   notas: Nota[];
+
+  cargarDesdeSupabase: () => Promise<void>;
 
   capturar: (texto: string) => void;
   eliminarDeBandeja: (id: string) => void;
@@ -66,161 +78,212 @@ type MenteStore = {
 
 export const useMenteStore = create<MenteStore>()(
   persist(
-    (set, get) => ({
-    bandeja: bandejaInicial,
-    ideas: ideasIniciales,
-    decisiones: decisionesIniciales,
-    notas: notasIniciales,
-  
-    capturar: (texto) =>
-      set((state) => ({
-        bandeja: [
-          { id: crypto.randomUUID(), texto, creadaEn: new Date().toISOString() },
-          ...state.bandeja,
-        ],
-      })),
-  
-    eliminarDeBandeja: (id) =>
-      set((state) => ({ bandeja: state.bandeja.filter((i) => i.id !== id) })),
-  
-    clasificarComoTarea: (id) => {
-      const item = get().bandeja.find((i) => i.id === id);
-      if (!item) return;
-      useAccionStore.getState().agregarTarea(tareaBase(item.texto, "Organización"));
-      get().eliminarDeBandeja(id);
-    },
-  
-    clasificarComoIdea: (id, datos) => {
-      const item = get().bandeja.find((i) => i.id === id);
-      if (!item) return;
-      const idea: Idea = {
-        id: crypto.randomUUID(),
-        titulo: item.texto,
-        descripcion: "",
-        area: "Organización",
-        potencial: "Media",
-        estado: "Nueva",
-        origen: "Bandeja mental",
-        fecha: new Date().toISOString().slice(0, 10),
-        accionesPosibles: [],
-        ...datos,
-      };
-      set((state) => ({ ideas: [idea, ...state.ideas] }));
-      get().eliminarDeBandeja(id);
-    },
-  
-    clasificarComoDecision: (id, datos) => {
-      const item = get().bandeja.find((i) => i.id === id);
-      if (!item) return;
-      const decision: Decision = {
-        id: crypto.randomUUID(),
-        problema: item.texto,
-        opciones: [],
-        impacto: "Medio",
-        costoRiesgo: "",
-        estado: "Abierta",
-        fechaLimite: null,
-        creadaEn: new Date().toISOString(),
-        ...datos,
-      };
-      set((state) => ({ decisiones: [decision, ...state.decisiones] }));
-      get().eliminarDeBandeja(id);
-    },
-  
-    clasificarComoNota: (id, datos) => {
-      const item = get().bandeja.find((i) => i.id === id);
-      if (!item) return;
-      const nota: Nota = {
-        id: crypto.randomUUID(),
-        titulo: item.texto,
-        contenido: "",
-        vinculo: null,
-        creadaEn: new Date().toISOString(),
-        ...datos,
-      };
-      set((state) => ({ notas: [nota, ...state.notas] }));
-      get().eliminarDeBandeja(id);
-    },
-  
-    agregarIdea: (idea) => set((state) => ({ ideas: [idea, ...state.ideas] })),
-  
-    actualizarIdea: (id, cambios) =>
-      set((state) => ({
-        ideas: state.ideas.map((i) => (i.id === id ? { ...i, ...cambios } : i)),
-      })),
-  
-    convertirIdea: (id, destino) => {
-      const idea = get().ideas.find((i) => i.id === id);
-      if (!idea) return;
-  
-      if (destino === "Tarea") {
-        const tarea = tareaBase(idea.titulo, idea.area);
-        tarea.descripcion = idea.descripcion;
-        useAccionStore.getState().agregarTarea(tarea);
-      } else if (destino === "Proyecto") {
-        useAccionStore.getState().agregarProyecto({
-          id: crypto.randomUUID(),
-          nombre: idea.titulo,
-          area: idea.area,
-          tipo: "Propio",
-          progreso: 0,
-          fechaLimite: null,
-          estado: "en_curso",
-        });
-      } else if (destino === "Nota") {
-        get().agregarNota({
-          id: crypto.randomUUID(),
-          titulo: idea.titulo,
-          contenido: idea.descripcion,
-          vinculo: null,
-          creadaEn: new Date().toISOString(),
-        });
-      } else if (destino === "Decisión") {
-        get().agregarDecision({
-          id: crypto.randomUUID(),
-          problema: idea.titulo,
-          opciones: [],
-          impacto: "Medio",
-          costoRiesgo: "",
-          estado: "Abierta",
-          fechaLimite: null,
-          creadaEn: new Date().toISOString(),
+    (set, get) => {
+      function sincronizar() {
+        if (!esCuentaReal()) return;
+        const s = get();
+        sync.guardar({
+          bandeja: s.bandeja,
+          ideas: s.ideas,
+          decisiones: s.decisiones,
+          notas: s.notas,
         });
       }
-      // "Objetivo" se modela como tarea estratégica hasta que exista el módulo Dirección.
-  
-      get().actualizarIdea(id, { estado: "Convertida" });
+
+      return {
+        bandeja: bandejaInicial,
+        ideas: ideasIniciales,
+        decisiones: decisionesIniciales,
+        notas: notasIniciales,
+
+        cargarDesdeSupabase: async () => {
+          if (!esCuentaReal()) return;
+          const datos = await sync.cargar();
+          if (datos) {
+            set({
+              bandeja: datos.bandeja,
+              ideas: datos.ideas,
+              decisiones: datos.decisiones,
+              notas: datos.notas,
+            });
+          } else {
+            sincronizar();
+          }
+        },
+
+        capturar: (texto) => {
+          set((state) => ({
+            bandeja: [
+              { id: crypto.randomUUID(), texto, creadaEn: new Date().toISOString() },
+              ...state.bandeja,
+            ],
+          }));
+          sincronizar();
+        },
+
+        eliminarDeBandeja: (id) => {
+          set((state) => ({ bandeja: state.bandeja.filter((i) => i.id !== id) }));
+          sincronizar();
+        },
+
+        clasificarComoTarea: (id) => {
+          const item = get().bandeja.find((i) => i.id === id);
+          if (!item) return;
+          useAccionStore.getState().agregarTarea(tareaBase(item.texto, "Organización"));
+          get().eliminarDeBandeja(id);
+        },
+
+        clasificarComoIdea: (id, datos) => {
+          const item = get().bandeja.find((i) => i.id === id);
+          if (!item) return;
+          const idea: Idea = {
+            id: crypto.randomUUID(),
+            titulo: item.texto,
+            descripcion: "",
+            area: "Organización",
+            potencial: "Media",
+            estado: "Nueva",
+            origen: "Bandeja mental",
+            fecha: new Date().toISOString().slice(0, 10),
+            accionesPosibles: [],
+            ...datos,
+          };
+          set((state) => ({ ideas: [idea, ...state.ideas] }));
+          sincronizar();
+          get().eliminarDeBandeja(id);
+        },
+
+        clasificarComoDecision: (id, datos) => {
+          const item = get().bandeja.find((i) => i.id === id);
+          if (!item) return;
+          const decision: Decision = {
+            id: crypto.randomUUID(),
+            problema: item.texto,
+            opciones: [],
+            impacto: "Medio",
+            costoRiesgo: "",
+            estado: "Abierta",
+            fechaLimite: null,
+            creadaEn: new Date().toISOString(),
+            ...datos,
+          };
+          set((state) => ({ decisiones: [decision, ...state.decisiones] }));
+          sincronizar();
+          get().eliminarDeBandeja(id);
+        },
+
+        clasificarComoNota: (id, datos) => {
+          const item = get().bandeja.find((i) => i.id === id);
+          if (!item) return;
+          const nota: Nota = {
+            id: crypto.randomUUID(),
+            titulo: item.texto,
+            contenido: "",
+            vinculo: null,
+            creadaEn: new Date().toISOString(),
+            ...datos,
+          };
+          set((state) => ({ notas: [nota, ...state.notas] }));
+          sincronizar();
+          get().eliminarDeBandeja(id);
+        },
+
+        agregarIdea: (idea) => {
+          set((state) => ({ ideas: [idea, ...state.ideas] }));
+          sincronizar();
+        },
+
+        actualizarIdea: (id, cambios) => {
+          set((state) => ({
+            ideas: state.ideas.map((i) => (i.id === id ? { ...i, ...cambios } : i)),
+          }));
+          sincronizar();
+        },
+
+        convertirIdea: (id, destino) => {
+          const idea = get().ideas.find((i) => i.id === id);
+          if (!idea) return;
+
+          if (destino === "Tarea") {
+            const tarea = tareaBase(idea.titulo, idea.area);
+            tarea.descripcion = idea.descripcion;
+            useAccionStore.getState().agregarTarea(tarea);
+          } else if (destino === "Proyecto") {
+            useAccionStore.getState().agregarProyecto({
+              id: crypto.randomUUID(),
+              nombre: idea.titulo,
+              area: idea.area,
+              tipo: "Propio",
+              progreso: 0,
+              fechaLimite: null,
+              estado: "en_curso",
+            });
+          } else if (destino === "Nota") {
+            get().agregarNota({
+              id: crypto.randomUUID(),
+              titulo: idea.titulo,
+              contenido: idea.descripcion,
+              vinculo: null,
+              creadaEn: new Date().toISOString(),
+            });
+          } else if (destino === "Decisión") {
+            get().agregarDecision({
+              id: crypto.randomUUID(),
+              problema: idea.titulo,
+              opciones: [],
+              impacto: "Medio",
+              costoRiesgo: "",
+              estado: "Abierta",
+              fechaLimite: null,
+              creadaEn: new Date().toISOString(),
+            });
+          }
+          // "Objetivo" se modela como tarea estratégica hasta que exista el módulo Dirección.
+
+          get().actualizarIdea(id, { estado: "Convertida" });
+        },
+
+        agregarDecision: (decision) => {
+          set((state) => ({ decisiones: [decision, ...state.decisiones] }));
+          sincronizar();
+        },
+
+        actualizarDecision: (id, cambios) => {
+          set((state) => ({
+            decisiones: state.decisiones.map((d) => (d.id === id ? { ...d, ...cambios } : d)),
+          }));
+          sincronizar();
+        },
+
+        tomarDecision: (id, resultado) =>
+          get().actualizarDecision(id, { estado: "Tomada", resultado }),
+
+        generarTareasDeImplementacion: (id, titulos) => {
+          const decision = get().decisiones.find((d) => d.id === id);
+          if (!decision) return;
+          titulos.forEach((titulo) => {
+            useAccionStore.getState().agregarTarea(tareaBase(titulo, "Organización"));
+          });
+        },
+
+        agregarNota: (nota) => {
+          set((state) => ({ notas: [nota, ...state.notas] }));
+          sincronizar();
+        },
+
+        actualizarNota: (id, cambios) => {
+          set((state) => ({
+            notas: state.notas.map((n) => (n.id === id ? { ...n, ...cambios } : n)),
+          }));
+          sincronizar();
+        },
+
+        eliminarNota: (id) => {
+          set((state) => ({ notas: state.notas.filter((n) => n.id !== id) }));
+          sincronizar();
+        },
+      };
     },
-  
-    agregarDecision: (decision) =>
-      set((state) => ({ decisiones: [decision, ...state.decisiones] })),
-  
-    actualizarDecision: (id, cambios) =>
-      set((state) => ({
-        decisiones: state.decisiones.map((d) => (d.id === id ? { ...d, ...cambios } : d)),
-      })),
-  
-    tomarDecision: (id, resultado) =>
-      get().actualizarDecision(id, { estado: "Tomada", resultado }),
-  
-    generarTareasDeImplementacion: (id, titulos) => {
-      const decision = get().decisiones.find((d) => d.id === id);
-      if (!decision) return;
-      titulos.forEach((titulo) => {
-        useAccionStore.getState().agregarTarea(tareaBase(titulo, "Organización"));
-      });
-    },
-  
-    agregarNota: (nota) => set((state) => ({ notas: [nota, ...state.notas] })),
-  
-    actualizarNota: (id, cambios) =>
-      set((state) => ({
-        notas: state.notas.map((n) => (n.id === id ? { ...n, ...cambios } : n)),
-      })),
-  
-    eliminarNota: (id) =>
-      set((state) => ({ notas: state.notas.filter((n) => n.id !== id) })),
-    }),
     {
       name: "axiom-mind-mente",
       storage: createJSONStorage(() => crearStorageScopedPorCuenta()),
