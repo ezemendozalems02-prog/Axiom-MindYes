@@ -14,6 +14,7 @@ import { VALOR_HORA_USD } from "@/lib/finanzas";
 import { TareaCardKanban } from "@/components/accion/tarea-card-kanban";
 import { Badge } from "@/components/ui/badge";
 import { FormDialog } from "@/components/ui/form-dialog";
+import { camposProyecto, valoresAProyecto } from "@/components/accion/campos-proyecto";
 import { NotionTaskTable } from "@/components/centro-de-control/notion-task-table";
 
 const TABS = ["Tareas", "Resumen", "Cronología", "Rentabilidad"] as const;
