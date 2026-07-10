@@ -14,9 +14,9 @@ import { VALOR_HORA_USD } from "@/lib/finanzas";
 import { TareaCardKanban } from "@/components/accion/tarea-card-kanban";
 import { Badge } from "@/components/ui/badge";
 import { FormDialog } from "@/components/ui/form-dialog";
-import { camposProyecto, valoresAProyecto } from "@/components/accion/campos-proyecto";
+import { NotionTaskTable } from "@/components/centro-de-control/notion-task-table";
 
-const TABS = ["Resumen", "Tareas", "Cronología", "Rentabilidad"] as const;
+const TABS = ["Tareas", "Resumen", "Cronología", "Rentabilidad"] as const;
 
 export default function ProyectoNegocioDetallePage() {
   const params = useParams<{ id: string }>();
@@ -29,7 +29,7 @@ export default function ProyectoNegocioDetallePage() {
   const clientes = useNegocioStore((s) => s.clientes);
   const ingresos = useFinanzasStore((s) => s.ingresos);
 
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Resumen");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Tareas");
   const [arrastrandoId, setArrastrandoId] = useState<string | null>(null);
   const [dialogAbierto, setDialogAbierto] = useState(false);
 
@@ -153,34 +153,8 @@ export default function ProyectoNegocioDetallePage() {
       )}
 
       {tab === "Tareas" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {COLUMNAS_KANBAN.map((col) => {
-            const itemsCol = tareas.filter((t) => t.estado === col.id);
-            return (
-              <div
-                key={col.id}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => {
-                  if (arrastrandoId) moverEstado(arrastrandoId, col.id);
-                  setArrastrandoId(null);
-                }}
-                className="flex flex-col gap-2 rounded-lg border border-border bg-popover/40 p-3"
-              >
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-sm font-medium text-foreground">{col.titulo}</span>
-                  <span className="text-xs text-text-muted">{itemsCol.length}</span>
-                </div>
-                {itemsCol.map((t) => (
-                  <TareaCardKanban
-                    key={t.id}
-                    tarea={t}
-                    dragging={arrastrandoId === t.id}
-                    onDragStart={() => setArrastrandoId(t.id)}
-                  />
-                ))}
-              </div>
-            );
-          })}
+        <div className="-mx-4 sm:-mx-8">
+          <NotionTaskTable proyectoId={proyecto.id} />
         </div>
       )}
 

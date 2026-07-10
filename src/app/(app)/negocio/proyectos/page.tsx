@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { camposProyecto, valoresAProyecto } from "@/components/accion/campos-proyecto";
+import { NotionTaskTable } from "@/components/centro-de-control/notion-task-table";
 
 export default function ProyectosNegocioPage() {
   const proyectos = useAccionStore((s) => s.proyectos);
@@ -62,7 +63,11 @@ export default function ProyectosNegocioPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="-mx-4 sm:-mx-8">
+        <NotionTaskTable />
+      </div>
+
+      <div className="flex flex-col gap-3 mt-4">
         {proyectosNegocio.map((p) => {
           const tareasProyecto = tareas.filter((t) => t.proyectoId === p.id);
           const progreso = calcularProgresoProyecto(p.id, tareas);

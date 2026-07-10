@@ -10,8 +10,7 @@ import { PrioridadAbsoluta } from "@/components/centro-de-control/prioridad-abso
 import { ResumenDelDia } from "@/components/centro-de-control/resumen-del-dia";
 import { AreasDeVida } from "@/components/centro-de-control/areas-de-vida";
 import { Progreso } from "@/components/centro-de-control/progreso";
-import { InteligenciaDelDia } from "@/components/centro-de-control/inteligencia-del-dia";
-import { IndicesInteligencia } from "@/components/centro-de-control/indices-inteligencia";
+import { NotionTaskTable } from "@/components/centro-de-control/notion-task-table";
 import { ModoFoco } from "@/components/centro-de-control/modo-foco";
 import {
   getFechaLarga,
@@ -152,8 +151,7 @@ export default function CentroDeControlPage() {
     ),
     areas: <AreasDeVida key="areas" areas={areasConConsistencia} />,
     progreso: <Progreso key="progreso" progreso={progresoEnVivo} />,
-    inteligencia: <InteligenciaDelDia key="inteligencia" insights={insightsEnVivo} />,
-    indices: <IndicesInteligencia key="indices" indices={indices} />,
+    tareas: <NotionTaskTable key="tareas" />,
   };
 
   return (
@@ -174,7 +172,7 @@ export default function CentroDeControlPage() {
       </Topbar>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-5xl flex-col gap-10 px-4 py-6 sm:px-8 sm:py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-6 sm:px-8 sm:py-10">
           {ORDEN_BLOQUES[momento].map((id) => bloques[id])}
         </div>
       </div>

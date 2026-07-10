@@ -7,9 +7,9 @@ import { Topbar } from "@/components/layout/topbar";
 import { cn } from "@/lib/utils";
 
 const TABS = [
+  { href: "/negocio/proyectos", label: "Proyectos" },
   { href: "/negocio/crm", label: "CRM" },
   { href: "/negocio/pipeline", label: "Pipeline" },
-  { href: "/negocio/proyectos", label: "Proyectos" },
 ];
 
 export default function NegocioLayout({
