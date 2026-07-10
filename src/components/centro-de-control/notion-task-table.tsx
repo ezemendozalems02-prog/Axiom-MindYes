@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Plus, List, GripVertical, ChevronDown } from "lucide-react";
-import { format } from "date-fns";
-
 import { useAccionStore } from "@/stores/accion-store";
 import { getHoyISO } from "@/lib/hoy";
 import type { EstadoTarea, Prioridad, Tarea, Urgencia, Proyecto } from "@/types/accion";
