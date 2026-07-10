@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, List, GripVertical, ChevronDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, List, GripVertical, ChevronDown, ArrowDownAZ, Trash2 } from "lucide-react";
 import { useAccionStore } from "@/stores/accion-store";
 import { getHoyISO } from "@/lib/hoy";
 import type { EstadoTarea, Prioridad, Tarea, Urgencia, Proyecto } from "@/types/accion";
@@ -31,11 +31,27 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
   const proyectos = useAccionStore((s) => s.proyectos);
   const actualizarTarea = useAccionStore((s) => s.actualizarTarea);
   const agregarTarea = useAccionStore((s) => s.agregarTarea);
+  const eliminarTarea = useAccionStore((s) => s.eliminarTarea);
+
+  const [sortBy, setSortBy] = useState<"ninguno" | "prioridad" | "estado" | "proyecto">("ninguno");
 
   // Filtramos tareas activas (mostramos incluso las de la bandeja por si acaso)
-  const tareasActivas = tareas.filter(
-    (t) => t.estado !== "completado" && t.estado !== "archivado" && (!proyectoId || t.proyectoId === proyectoId)
-  );
+  const tareasActivas = useMemo(() => {
+    let filtradas = tareas.filter(
+      (t) => t.estado !== "completado" && t.estado !== "archivado" && (!proyectoId || t.proyectoId === proyectoId)
+    );
+
+    if (sortBy === "prioridad") {
+      const p = { "Crítica": 4, "Alta": 3, "Media": 2, "Baja": 1 };
+      filtradas.sort((a, b) => (p[b.prioridad as keyof typeof p] || 0) - (p[a.prioridad as keyof typeof p] || 0));
+    } else if (sortBy === "estado") {
+      const e = { "sin_empezar": 1, "en_progreso": 2, "bloqueado": 3 };
+      filtradas.sort((a, b) => (e[a.estado as keyof typeof e] || 0) - (e[b.estado as keyof typeof e] || 0));
+    } else if (sortBy === "proyecto") {
+      filtradas.sort((a, b) => (a.proyectoId || "").localeCompare(b.proyectoId || ""));
+    }
+    return filtradas;
+  }, [tareas, proyectoId, sortBy]);
   
   console.log("Todas las tareas:", tareas);
   console.log("Tareas activas mostradas:", tareasActivas);
@@ -115,9 +131,28 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 mb-2">
-        <List className="w-5 h-5 text-text-muted" />
-        <h2 className="text-xl font-semibold text-foreground">Tareas</h2>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <List className="w-5 h-5 text-text-muted" />
+          <h2 className="text-xl font-semibold text-foreground">Tareas</h2>
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/5 text-sm font-medium text-text-secondary transition-colors outline-none">
+            <ArrowDownAZ className="w-4 h-4" />
+            Ordenar: {sortBy === "ninguno" ? "Ninguno" : sortBy === "prioridad" ? "Prioridad" : sortBy === "estado" ? "Estado" : "Proyecto"}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[160px]">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-xs text-text-muted">Ordenar por</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSortBy("ninguno")}>Ninguno</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("prioridad")}>Prioridad</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("estado")}>Estado</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("proyecto")}>Proyecto</DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
@@ -172,6 +207,11 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => actualizarTarea(tarea.id, { estado: "completado" })}>
                             {getEstadoBadge("completado")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => eliminarTarea(tarea.id)} className="text-red-400 hover:text-red-300">
+                            <Trash2 className="w-4 h-4 mr-1.5" />
+                            Eliminar tarea
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
                       </DropdownMenuContent>
