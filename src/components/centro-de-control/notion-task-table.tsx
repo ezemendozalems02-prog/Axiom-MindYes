@@ -232,6 +232,7 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
                   <div className={`px-3 py-2.5 border-r border-border/40 flex-shrink-0 flex items-center ${COLUMNAS.find(c=>c.id==='tarea')?.width}`}>
                     <input
                       type="text"
+                      title={tarea.titulo}
                       className="w-full bg-transparent border-none text-foreground outline-none text-sm font-medium placeholder:text-text-muted/40"
                       placeholder="Nueva tarea..."
                       value={tarea.titulo}
@@ -271,6 +272,7 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
                   <div className={`px-3 py-2.5 border-r border-border/40 flex-shrink-0 flex items-center ${COLUMNAS.find(c=>c.id==='detalle')?.width}`}>
                     <input
                       type="text"
+                      title={tarea.descripcion || ""}
                       className="w-full bg-transparent border-none text-text-secondary focus:text-foreground outline-none text-sm placeholder:text-text-muted/40 transition-colors"
                       placeholder="Añadir detalle..."
                       value={tarea.descripcion || ""}
@@ -282,6 +284,7 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
                   <div className={`px-3 py-2.5 border-r border-border/40 flex-shrink-0 flex items-center ${COLUMNAS.find(c=>c.id==='area')?.width}`}>
                     <input
                       type="text"
+                      title={tarea.area || ""}
                       className="w-full bg-transparent border-none text-text-secondary focus:text-foreground outline-none text-sm placeholder:text-text-muted/40 transition-colors"
                       placeholder="Área..."
                       value={tarea.area || ""}
@@ -317,6 +320,7 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
                   <div className={`px-3 py-2.5 flex-shrink-0 flex items-center ${COLUMNAS.find(c=>c.id==='responsable')?.width}`}>
                     <input
                       type="text"
+                      title={tarea.delegacion?.delegadoA || ""}
                       className="w-full bg-transparent border-none text-text-secondary focus:text-foreground outline-none text-sm placeholder:text-text-muted/40 transition-colors"
                       placeholder="Responsable..."
                       value={tarea.delegacion?.delegadoA || ""}
