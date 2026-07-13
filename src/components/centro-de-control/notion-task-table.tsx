@@ -38,7 +38,7 @@ export function NotionTaskTable({ proyectoId }: { proyectoId?: string }) {
   // Filtramos tareas activas (mostramos incluso las de la bandeja por si acaso)
   const tareasActivas = useMemo(() => {
     let filtradas = tareas.filter(
-      (t) => t.estado !== "completado" && t.estado !== "archivado" && (!proyectoId || t.proyectoId === proyectoId)
+      (t) => t.estado !== "completado" && t.estado !== "archivado" && (!proyectoId || t.proyectoId === proyectoId) && t.area?.toLowerCase() !== "finanzas"
     );
 
     if (sortBy === "prioridad") {
