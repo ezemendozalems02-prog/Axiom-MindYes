@@ -1211,6 +1211,7 @@ export function aplicarSeedDemo() {
       ingresoMensualTarget: 4000,
       fondoEmergenciaTarget: 1500,
       fondoEmergenciaActual: 300,
+      presupuestoMensualGastos: 1500,
       inversiones: [],
     },
   });

@@ -1,17 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Pencil, Plus, TrendingDown, TrendingUp } from "lucide-react";
 
 import type { Gasto, Moneda, TipoGasto } from "@/types/finanzas";
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getHoyISO } from "@/lib/hoy";
-import { formatMonto, mesDe, sumarGastosDelMes } from "@/lib/finanzas";
+import {
+  diasEnMes,
+  formatMonto,
+  gastosPorCategoria,
+  gastosPorTipo,
+  mesAnterior,
+  mesDe,
+  sumarGastosDelMes,
+} from "@/lib/finanzas";
 import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
-const PRESUPUESTO_MENSUAL = 1500;
+const COLORES_CATEGORIA = [
+  "var(--color-primary)",
+  "var(--color-warning)",
+  "var(--color-success)",
+  "var(--color-destructive)",
+  "var(--color-text-muted)",
+];
 
 function camposGasto(moneda: Moneda): CampoForm[] {
   return [
@@ -22,11 +36,17 @@ function camposGasto(moneda: Moneda): CampoForm[] {
   ];
 }
 
+function camposPresupuesto(moneda: Moneda): CampoForm[] {
+  return [{ key: "presupuestoMensualGastos", label: `Presupuesto mensual (${moneda})`, type: "number" }];
+}
+
 export default function GastosPage() {
   const gastos = useFinanzasStore((s) => s.gastos);
   const agregarGasto = useFinanzasStore((s) => s.agregarGasto);
   const editarGasto = useFinanzasStore((s) => s.editarGasto);
   const eliminarGasto = useFinanzasStore((s) => s.eliminarGasto);
+  const objetivos = useFinanzasStore((s) => s.objetivos);
+  const actualizarObjetivos = useFinanzasStore((s) => s.actualizarObjetivos);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
   const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
 
@@ -34,10 +54,33 @@ export default function GastosPage() {
   const [categoria, setCategoria] = useState("Variable");
   const [tipo, setTipo] = useState<TipoGasto>("Variable");
   const [gastoEditando, setGastoEditando] = useState<Gasto | null>(null);
+  const [dialogPresupuestoAbierto, setDialogPresupuestoAbierto] = useState(false);
 
-  const mesActual = mesDe(getHoyISO());
+  const hoy = getHoyISO();
+  const mesActual = mesDe(hoy);
+  const mesPrevio = mesAnterior(mesActual);
   const totalMes = sumarGastosDelMes(gastos, mesActual);
-  const superaPresupuesto = totalMes > PRESUPUESTO_MENSUAL;
+  const totalMesPrevio = sumarGastosDelMes(gastos, mesPrevio);
+  const presupuesto = objetivos.presupuestoMensualGastos;
+  const superaPresupuesto = presupuesto > 0 && totalMes > presupuesto;
+  const pctPresupuesto = presupuesto > 0 ? Math.min(100, Math.round((totalMes / presupuesto) * 100)) : 0;
+  const restante = Math.max(0, presupuesto - totalMes);
+
+  const diaActual = Number(hoy.slice(8, 10));
+  const totalDiasMes = diasEnMes(mesActual);
+  const promedioDiario = diaActual > 0 ? totalMes / diaActual : 0;
+  const proyeccionFinMes = promedioDiario * totalDiasMes;
+  const superaProyeccion = presupuesto > 0 && proyeccionFinMes > presupuesto;
+
+  const deltaVsMesPrevio =
+    totalMesPrevio > 0 ? Math.round(((totalMes - totalMesPrevio) / totalMesPrevio) * 100) : null;
+
+  const categorias = gastosPorCategoria(gastos, mesActual);
+  const maxCategoria = categorias[0]?.monto ?? 0;
+  const { fijo, variable } = gastosPorTipo(gastos, mesActual);
+  const pctFijo = totalMes > 0 ? Math.round((fijo / totalMes) * 100) : 0;
+  const pctVariable = totalMes > 0 ? Math.round((variable / totalMes) * 100) : 0;
+
   const ordenados = [...gastos].sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   function registrar() {
@@ -60,15 +103,136 @@ export default function GastosPage() {
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Gastos</h1>
-        <p className="text-sm text-text-secondary">
-          Total del mes: {fm(totalMes)} de {fm(PRESUPUESTO_MENSUAL)} presupuestados
-        </p>
+        <p className="text-sm text-text-secondary">Controlá tu gasto mensual y en qué se te va la plata.</p>
       </div>
 
       {superaPresupuesto && (
         <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <AlertTriangle className="size-3.5" />
           Superaste tu presupuesto mensual de gastos.
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-foreground">Presupuesto mensual</span>
+          <button
+            onClick={() => setDialogPresupuestoAbierto(true)}
+            className="text-text-muted hover:text-foreground"
+            aria-label="Editar presupuesto mensual"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-sm">
+          <span className={superaPresupuesto ? "font-semibold text-destructive" : "font-semibold text-foreground"}>
+            {fm(totalMes)}
+          </span>
+          <span className="text-text-muted">
+            de {fm(presupuesto)} · {pctPresupuesto}%
+          </span>
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className={`h-full rounded-full ${
+              superaPresupuesto ? "bg-destructive" : pctPresupuesto >= 80 ? "bg-warning" : "bg-success"
+            }`}
+            style={{ width: `${pctPresupuesto}%` }}
+          />
+        </div>
+        <span className="text-xs text-text-muted">
+          {presupuesto <= 0
+            ? "Definí un presupuesto para hacer seguimiento."
+            : superaPresupuesto
+              ? `Te pasaste por ${fm(totalMes - presupuesto)}`
+              : `Te quedan ${fm(restante)} disponibles este mes`}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-3">
+          <span className="text-xs text-text-muted uppercase tracking-wide">Promedio diario</span>
+          <span className="text-lg font-semibold text-foreground">{fm(promedioDiario)}</span>
+        </div>
+        <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-3">
+          <span className="text-xs text-text-muted uppercase tracking-wide">Proyección fin de mes</span>
+          <span className={`text-lg font-semibold ${superaProyeccion ? "text-destructive" : "text-foreground"}`}>
+            {fm(proyeccionFinMes)}
+          </span>
+        </div>
+        <div className="col-span-2 flex flex-col gap-1 rounded-lg border border-border bg-card p-3 sm:col-span-1">
+          <span className="text-xs text-text-muted uppercase tracking-wide">Vs. mes anterior</span>
+          {deltaVsMesPrevio === null ? (
+            <span className="text-lg font-semibold text-foreground">—</span>
+          ) : (
+            <span
+              className={`flex items-center gap-1 text-lg font-semibold ${
+                deltaVsMesPrevio > 0 ? "text-destructive" : "text-success"
+              }`}
+            >
+              {deltaVsMesPrevio > 0 ? (
+                <TrendingUp className="size-4" />
+              ) : (
+                <TrendingDown className="size-4" />
+              )}
+              {Math.abs(deltaVsMesPrevio)}%
+            </span>
+          )}
+        </div>
+      </div>
+
+      {categorias.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+            <span className="text-sm font-medium text-foreground">Por categoría</span>
+            <div className="flex flex-col gap-2.5">
+              {categorias.slice(0, 5).map((c, i) => (
+                <div key={c.categoria} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="min-w-0 truncate text-text-secondary">{c.categoria}</span>
+                    <span className="shrink-0 text-foreground">{fm(c.monto)}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${maxCategoria > 0 ? Math.round((c.monto / maxCategoria) * 100) : 0}%`,
+                        background: COLORES_CATEGORIA[i % COLORES_CATEGORIA.length],
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+            <span className="text-sm font-medium text-foreground">Fijo vs. variable</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-text-secondary">Fijo</span>
+                  <span className="text-foreground">
+                    {fm(fijo)} · {pctFijo}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${pctFijo}%` }} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-text-secondary">Variable</span>
+                  <span className="text-foreground">
+                    {fm(variable)} · {pctVariable}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className="h-full rounded-full bg-warning" style={{ width: `${pctVariable}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -151,6 +315,18 @@ export default function GastosPage() {
           if (gastoEditando) eliminarGasto(gastoEditando.id);
         }}
         submitLabel="Guardar cambios"
+      />
+
+      <FormDialog
+        open={dialogPresupuestoAbierto}
+        onOpenChange={setDialogPresupuestoAbierto}
+        title="Editar presupuesto mensual"
+        campos={camposPresupuesto(monedaVisualizacion)}
+        datosIniciales={{ presupuestoMensualGastos: presupuesto }}
+        onGuardar={(valores) =>
+          actualizarObjetivos({ presupuestoMensualGastos: Number(valores.presupuestoMensualGastos) || 0 })
+        }
+        submitLabel="Guardar"
       />
     </div>
   );

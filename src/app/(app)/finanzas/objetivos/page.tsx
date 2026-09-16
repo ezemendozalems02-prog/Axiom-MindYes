@@ -16,6 +16,7 @@ function camposObjetivos(moneda: Moneda): CampoForm[] {
     { key: "ahorroMensualTarget", label: `Objetivo de ahorro mensual (${moneda})`, type: "number" },
     { key: "fondoEmergenciaTarget", label: `Meta del fondo de emergencia (${moneda})`, type: "number" },
     { key: "fondoEmergenciaActual", label: `Fondo de emergencia actual (${moneda})`, type: "number" },
+    { key: "presupuestoMensualGastos", label: `Presupuesto mensual de gastos (${moneda})`, type: "number" },
   ];
 }
 
@@ -162,6 +163,7 @@ export default function ObjetivosFinancierosPage() {
             ahorroMensualTarget: Number(valores.ahorroMensualTarget) || 0,
             fondoEmergenciaTarget: Number(valores.fondoEmergenciaTarget) || 0,
             fondoEmergenciaActual: Number(valores.fondoEmergenciaActual) || 0,
+            presupuestoMensualGastos: Number(valores.presupuestoMensualGastos) || 0,
           })
         }
         submitLabel="Guardar cambios"

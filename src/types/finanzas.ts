@@ -37,6 +37,7 @@ export type ObjetivosFinancieros = {
   ingresoMensualTarget: number;
   fondoEmergenciaTarget: number;
   fondoEmergenciaActual: number;
+  presupuestoMensualGastos: number;
   inversiones: Inversion[];
 };
 

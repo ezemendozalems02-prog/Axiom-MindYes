@@ -20,6 +20,11 @@ export function mesAnterior(mes: string): string {
   return `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, "0")}`;
 }
 
+export function diasEnMes(mes: string): number {
+  const [y, m] = mes.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
 export function sumarIngresosDelMes(ingresos: Ingreso[], mes: string): number {
   return ingresos
     .filter((i) => mesDe(i.fecha) === mes && i.estado !== "Pendiente")
@@ -37,6 +42,14 @@ export function gastosPorCategoria(gastos: Gasto[], mes: string) {
   return Array.from(totales.entries())
     .map(([categoria, monto]) => ({ categoria, monto }))
     .sort((a, b) => b.monto - a.monto);
+}
+
+export function gastosPorTipo(gastos: Gasto[], mes: string): { fijo: number; variable: number } {
+  const delMes = gastos.filter((g) => mesDe(g.fecha) === mes);
+  return {
+    fijo: delMes.filter((g) => g.tipo === "Fijo").reduce((acc, g) => acc + g.monto, 0),
+    variable: delMes.filter((g) => g.tipo === "Variable").reduce((acc, g) => acc + g.monto, 0),
+  };
 }
 
 export function flujoProyectado30Dias(ingresos: Ingreso[], gastos: Gasto[]): number {

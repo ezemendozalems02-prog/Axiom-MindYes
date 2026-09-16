@@ -13,6 +13,7 @@ export const objetivosFinancieros: ObjetivosFinancieros = {
   ingresoMensualTarget: 0,
   fondoEmergenciaTarget: 0,
   fondoEmergenciaActual: 0,
+  presupuestoMensualGastos: 1500,
   inversiones,
 };
 
