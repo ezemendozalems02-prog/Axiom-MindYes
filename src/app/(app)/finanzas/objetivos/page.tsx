@@ -3,23 +3,28 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import type { Moneda } from "@/types/finanzas";
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { getHoyISO } from "@/lib/hoy";
 import { formatMonto, mesDe, sumarGastosDelMes, sumarIngresosDelMes } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
 import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
-const CAMPOS_OBJETIVOS: CampoForm[] = [
-  { key: "ingresoMensualTarget", label: "Objetivo de ingreso mensual (USD)", type: "number" },
-  { key: "ahorroMensualTarget", label: "Objetivo de ahorro mensual (USD)", type: "number" },
-  { key: "fondoEmergenciaTarget", label: "Meta del fondo de emergencia (USD)", type: "number" },
-  { key: "fondoEmergenciaActual", label: "Fondo de emergencia actual (USD)", type: "number" },
-];
+function camposObjetivos(moneda: Moneda): CampoForm[] {
+  return [
+    { key: "ingresoMensualTarget", label: `Objetivo de ingreso mensual (${moneda})`, type: "number" },
+    { key: "ahorroMensualTarget", label: `Objetivo de ahorro mensual (${moneda})`, type: "number" },
+    { key: "fondoEmergenciaTarget", label: `Meta del fondo de emergencia (${moneda})`, type: "number" },
+    { key: "fondoEmergenciaActual", label: `Fondo de emergencia actual (${moneda})`, type: "number" },
+  ];
+}
 
-const CAMPOS_INVERSION: CampoForm[] = [
-  { key: "nombre", label: "Nombre", type: "text", placeholder: "Ej: Plazo fijo" },
-  { key: "monto", label: "Monto (USD)", type: "number", placeholder: "1000" },
-];
+function camposInversion(moneda: Moneda): CampoForm[] {
+  return [
+    { key: "nombre", label: "Nombre", type: "text", placeholder: "Ej: Plazo fijo" },
+    { key: "monto", label: `Monto (${moneda})`, type: "number", placeholder: "1000" },
+  ];
+}
 
 function BarraObjetivo({
   label,
@@ -56,8 +61,7 @@ export default function ObjetivosFinancierosPage() {
   const agregarInversion = useFinanzasStore((s) => s.agregarInversion);
   const eliminarInversion = useFinanzasStore((s) => s.eliminarInversion);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
-  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
-  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
 
   const [dialogObjetivosAbierto, setDialogObjetivosAbierto] = useState(false);
   const [dialogInversionAbierto, setDialogInversionAbierto] = useState(false);
@@ -150,7 +154,7 @@ export default function ObjetivosFinancierosPage() {
         open={dialogObjetivosAbierto}
         onOpenChange={setDialogObjetivosAbierto}
         title="Editar objetivos financieros"
-        campos={CAMPOS_OBJETIVOS}
+        campos={camposObjetivos(monedaVisualizacion)}
         datosIniciales={objetivos}
         onGuardar={(valores) =>
           actualizarObjetivos({
@@ -167,7 +171,7 @@ export default function ObjetivosFinancierosPage() {
         open={dialogInversionAbierto}
         onOpenChange={setDialogInversionAbierto}
         title="Nueva inversión"
-        campos={CAMPOS_INVERSION}
+        campos={camposInversion(monedaVisualizacion)}
         onGuardar={(valores) =>
           agregarInversion({
             id: crypto.randomUUID(),

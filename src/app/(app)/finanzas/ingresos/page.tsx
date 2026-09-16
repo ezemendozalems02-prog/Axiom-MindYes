@@ -22,8 +22,7 @@ export default function IngresosPage() {
   const agregarIngreso = useFinanzasStore((s) => s.agregarIngreso);
   const clientes = useNegocioStore((s) => s.clientes);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
-  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
-  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
 
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("Honorarios");
@@ -41,7 +40,7 @@ export default function IngresosPage() {
       id: crypto.randomUUID(),
       fecha: getHoyISO(),
       monto: valor,
-      moneda: "USD",
+      moneda: monedaVisualizacion,
       clienteId: clienteId || null,
       proyectoId: null,
       categoria,
@@ -63,7 +62,7 @@ export default function IngresosPage() {
 
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-text-muted">Monto (USD)</label>
+          <label className="text-xs text-text-muted">Monto ({monedaVisualizacion})</label>
           <input
             value={monto}
             onChange={(e) => setMonto(e.target.value)}

@@ -3,18 +3,11 @@ import { getHoyISO } from "@/lib/hoy";
 
 export const VALOR_HORA_USD = 35;
 
-// Cotización de referencia (USD -> ARS) usada para convertir los montos,
-// que se cargan en USD, cuando el usuario elige ver Finanzas en pesos.
-export const COTIZACION_DOLAR_DEFAULT = 1450;
-
-export function convertirMonto(montoUSD: number, monedaDestino: Moneda, cotizacionDolar: number): number {
-  return monedaDestino === "ARS" ? montoUSD * cotizacionDolar : montoUSD;
-}
-
-export function formatMonto(montoUSD: number, monedaDestino: Moneda, cotizacionDolar: number): string {
-  const convertido = convertirMonto(montoUSD, monedaDestino, cotizacionDolar);
-  const prefijo = monedaDestino === "ARS" ? "$" : "US$";
-  return `${prefijo}${Math.round(convertido).toLocaleString("es-AR")}`;
+// Sin conversión: el monto se muestra tal cual se cargó, solo cambia el
+// símbolo según la moneda con la que el usuario elige trabajar Finanzas.
+export function formatMonto(monto: number, moneda: Moneda): string {
+  const prefijo = moneda === "ARS" ? "$" : "US$";
+  return `${prefijo}${Math.round(monto).toLocaleString("es-AR")}`;
 }
 
 export function mesDe(fechaISO: string): string {

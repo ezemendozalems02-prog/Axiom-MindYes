@@ -27,8 +27,7 @@ export default function DeudasPage() {
   const registrarPagoDeuda = useFinanzasStore((s) => s.registrarPagoDeuda);
   const eliminarDeuda = useFinanzasStore((s) => s.eliminarDeuda);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
-  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
-  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
 
   const [nombre, setNombre] = useState("");
   const [acreedor, setAcreedor] = useState("");
@@ -61,7 +60,7 @@ export default function DeudasPage() {
       nombre: nombre.trim(),
       acreedor: acreedor.trim(),
       montoOriginal: valor,
-      moneda: "USD",
+      moneda: monedaVisualizacion,
       tasaInteresMensual: Number(tasaInteresMensual) || 0,
       cuotaMensual: cuota,
       diaVencimiento: Math.min(31, Math.max(1, dia || 10)),
@@ -122,7 +121,7 @@ export default function DeudasPage() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-text-muted">Monto total (USD)</label>
+          <label className="text-xs text-text-muted">Monto total ({monedaVisualizacion})</label>
           <input
             value={montoOriginal}
             onChange={(e) => setMontoOriginal(e.target.value)}

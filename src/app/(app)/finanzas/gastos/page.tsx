@@ -16,8 +16,7 @@ export default function GastosPage() {
   const gastos = useFinanzasStore((s) => s.gastos);
   const agregarGasto = useFinanzasStore((s) => s.agregarGasto);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
-  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
-  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
 
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("Variable");
@@ -35,7 +34,7 @@ export default function GastosPage() {
       id: crypto.randomUUID(),
       fecha: getHoyISO(),
       monto: valor,
-      moneda: "USD",
+      moneda: monedaVisualizacion,
       categoria,
       areaVida: "Organización",
       tipo,
@@ -62,7 +61,7 @@ export default function GastosPage() {
 
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-text-muted">Monto (USD)</label>
+          <label className="text-xs text-text-muted">Monto ({monedaVisualizacion})</label>
           <input
             value={monto}
             onChange={(e) => setMonto(e.target.value)}

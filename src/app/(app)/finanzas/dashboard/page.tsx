@@ -14,6 +14,7 @@ import {
   XAxis,
 } from "recharts";
 
+import type { Moneda } from "@/types/finanzas";
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { getHoyISO } from "@/lib/hoy";
 import {
@@ -30,9 +31,9 @@ import {
 import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 import { Badge } from "@/components/ui/badge";
 
-const CAMPOS_PATRIMONIO: CampoForm[] = [
-  { key: "activos", label: "Activos (USD)", type: "number" },
-];
+function camposPatrimonio(moneda: Moneda): CampoForm[] {
+  return [{ key: "activos", label: `Activos (${moneda})`, type: "number" }];
+}
 
 const COLORES_DONUT = [
   "var(--color-primary)",
@@ -50,8 +51,7 @@ export default function DashboardFinancieroPage() {
   const deudas = useFinanzasStore((s) => s.deudas);
   const actualizarPatrimonio = useFinanzasStore((s) => s.actualizarPatrimonio);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
-  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
-  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
   const [dialogPatrimonioAbierto, setDialogPatrimonioAbierto] = useState(false);
 
   const mesActual = mesDe(getHoyISO());
@@ -239,7 +239,7 @@ export default function DashboardFinancieroPage() {
         open={dialogPatrimonioAbierto}
         onOpenChange={setDialogPatrimonioAbierto}
         title="Editar patrimonio"
-        campos={CAMPOS_PATRIMONIO}
+        campos={camposPatrimonio(monedaVisualizacion)}
         datosIniciales={patrimonio}
         onGuardar={(valores) =>
           actualizarPatrimonio({

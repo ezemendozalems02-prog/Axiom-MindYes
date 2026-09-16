@@ -9,7 +9,6 @@ import {
   objetivosFinancieros as objetivosIniciales,
   patrimonio as patrimonioInicial,
 } from "@/lib/mock/finanzas";
-import { COTIZACION_DOLAR_DEFAULT } from "@/lib/finanzas";
 import { crearStorageScopedPorCuenta, esCuentaReal } from "@/lib/storage-por-cuenta";
 import { crearSyncJSON } from "@/lib/supabase/jsonb-sync";
 
@@ -29,12 +28,11 @@ type FinanzasStore = {
   deudas: Deuda[];
   objetivos: ObjetivosFinancieros;
   patrimonio: Patrimonio;
-  // Preferencia de visualización (solo local, no sincroniza con Supabase):
-  // los montos se cargan en USD y se convierten al vuelo para mostrarse.
+  // Moneda con la que el usuario elige trabajar Finanzas (solo local, no
+  // sincroniza con Supabase): define el símbolo a mostrar y en qué moneda
+  // se guardan los nuevos registros. No hace conversión entre monedas.
   monedaVisualizacion: Moneda;
-  cotizacionDolar: number;
   setMonedaVisualizacion: (moneda: Moneda) => void;
-  setCotizacionDolar: (cotizacion: number) => void;
   cargarDesdeSupabase: () => Promise<void>;
   agregarIngreso: (ingreso: Ingreso) => void;
   agregarGasto: (gasto: Gasto) => void;
@@ -69,11 +67,8 @@ export const useFinanzasStore = create<FinanzasStore>()(
         objetivos: objetivosIniciales,
         patrimonio: patrimonioInicial,
         monedaVisualizacion: "USD",
-        cotizacionDolar: COTIZACION_DOLAR_DEFAULT,
 
         setMonedaVisualizacion: (moneda) => set({ monedaVisualizacion: moneda }),
-        setCotizacionDolar: (cotizacion) =>
-          set({ cotizacionDolar: cotizacion > 0 ? cotizacion : COTIZACION_DOLAR_DEFAULT }),
 
         cargarDesdeSupabase: async () => {
           if (!esCuentaReal()) return;
