@@ -36,6 +36,8 @@ type FinanzasStore = {
   cargarDesdeSupabase: () => Promise<void>;
   agregarIngreso: (ingreso: Ingreso) => void;
   agregarGasto: (gasto: Gasto) => void;
+  editarGasto: (id: string, cambios: Partial<Gasto>) => void;
+  eliminarGasto: (id: string) => void;
   agregarDeuda: (deuda: Deuda) => void;
   registrarPagoDeuda: (id: string, monto: number, fecha: string) => void;
   eliminarDeuda: (id: string) => void;
@@ -93,6 +95,18 @@ export const useFinanzasStore = create<FinanzasStore>()(
 
         agregarGasto: (gasto) => {
           set((state) => ({ gastos: [...state.gastos, gasto] }));
+          sincronizar();
+        },
+
+        editarGasto: (id, cambios) => {
+          set((state) => ({
+            gastos: state.gastos.map((g) => (g.id === id ? { ...g, ...cambios } : g)),
+          }));
+          sincronizar();
+        },
+
+        eliminarGasto: (id) => {
+          set((state) => ({ gastos: state.gastos.filter((g) => g.id !== id) }));
           sincronizar();
         },
 

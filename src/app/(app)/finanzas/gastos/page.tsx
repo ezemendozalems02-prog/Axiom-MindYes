@@ -1,26 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, AlertTriangle } from "lucide-react";
+import { Pencil, Plus, AlertTriangle } from "lucide-react";
 
-import type { Gasto, TipoGasto } from "@/types/finanzas";
+import type { Gasto, Moneda, TipoGasto } from "@/types/finanzas";
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getHoyISO } from "@/lib/hoy";
 import { formatMonto, mesDe, sumarGastosDelMes } from "@/lib/finanzas";
+import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
 const PRESUPUESTO_MENSUAL = 1500;
+
+function camposGasto(moneda: Moneda): CampoForm[] {
+  return [
+    { key: "fecha", label: "Fecha", type: "date" },
+    { key: "monto", label: `Monto (${moneda})`, type: "number" },
+    { key: "categoria", label: "Categoría", type: "text" },
+    { key: "tipo", label: "Tipo", type: "select", opciones: ["Fijo", "Variable"] },
+  ];
+}
 
 export default function GastosPage() {
   const gastos = useFinanzasStore((s) => s.gastos);
   const agregarGasto = useFinanzasStore((s) => s.agregarGasto);
+  const editarGasto = useFinanzasStore((s) => s.editarGasto);
+  const eliminarGasto = useFinanzasStore((s) => s.eliminarGasto);
   const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
   const fm = (monto: number) => formatMonto(monto, monedaVisualizacion);
 
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("Variable");
   const [tipo, setTipo] = useState<TipoGasto>("Variable");
+  const [gastoEditando, setGastoEditando] = useState<Gasto | null>(null);
 
   const mesActual = mesDe(getHoyISO());
   const totalMes = sumarGastosDelMes(gastos, mesActual);
@@ -108,9 +121,37 @@ export default function GastosPage() {
             <span className="ml-auto shrink-0 text-right text-sm font-medium text-foreground sm:ml-0 sm:w-20">
               {fm(g.monto)}
             </span>
+            <button
+              onClick={() => setGastoEditando(g)}
+              className="shrink-0 text-text-muted hover:text-foreground"
+              aria-label="Editar gasto"
+            >
+              <Pencil className="size-3.5" />
+            </button>
           </div>
         ))}
       </div>
+
+      <FormDialog
+        open={gastoEditando !== null}
+        onOpenChange={(v) => { if (!v) setGastoEditando(null); }}
+        title="Editar gasto"
+        campos={camposGasto(monedaVisualizacion)}
+        datosIniciales={gastoEditando ?? undefined}
+        onGuardar={(valores) => {
+          if (!gastoEditando) return;
+          editarGasto(gastoEditando.id, {
+            fecha: String(valores.fecha) || gastoEditando.fecha,
+            monto: Number(valores.monto) || 0,
+            categoria: String(valores.categoria),
+            tipo: valores.tipo as TipoGasto,
+          });
+        }}
+        onEliminar={() => {
+          if (gastoEditando) eliminarGasto(gastoEditando.id);
+        }}
+        submitLabel="Guardar cambios"
+      />
     </div>
   );
 }
