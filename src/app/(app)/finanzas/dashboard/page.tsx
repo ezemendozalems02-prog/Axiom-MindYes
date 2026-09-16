@@ -20,6 +20,7 @@ import {
   calcularRatioDeudaIngreso,
   calcularTotalDeudaPendiente,
   flujoProyectado30Dias,
+  formatMonto,
   gastosPorCategoria,
   mesAnterior,
   mesDe,
@@ -48,6 +49,9 @@ export default function DashboardFinancieroPage() {
   const patrimonio = useFinanzasStore((s) => s.patrimonio);
   const deudas = useFinanzasStore((s) => s.deudas);
   const actualizarPatrimonio = useFinanzasStore((s) => s.actualizarPatrimonio);
+  const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
+  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
   const [dialogPatrimonioAbierto, setDialogPatrimonioAbierto] = useState(false);
 
   const mesActual = mesDe(getHoyISO());
@@ -90,7 +94,7 @@ export default function DashboardFinancieroPage() {
           <span
             className={`text-2xl font-semibold ${flujo30 >= 0 ? "text-success" : "text-destructive"}`}
           >
-            ${flujo30.toLocaleString("es-AR")}
+            {fm(flujo30)}
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
@@ -107,7 +111,7 @@ export default function DashboardFinancieroPage() {
             </button>
           </div>
           <span className="text-2xl font-semibold text-foreground">
-            ${patrimonioNeto.toLocaleString("es-AR")}
+            {fm(patrimonioNeto)}
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
@@ -115,7 +119,7 @@ export default function DashboardFinancieroPage() {
             Ahorro del mes
           </span>
           <span className="text-2xl font-semibold text-foreground">
-            ${ahorroMes.toLocaleString("es-AR")}
+            {fm(ahorroMes)}
           </span>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
             <div className="h-full rounded-full bg-success" style={{ width: `${pctAhorro}%` }} />
@@ -142,7 +146,7 @@ export default function DashboardFinancieroPage() {
             )}
           </div>
           <span className={`text-2xl font-semibold ${deudaTotal > 0 ? "text-destructive" : "text-foreground"}`}>
-            ${deudaTotal.toLocaleString("es-AR")}
+            {fm(deudaTotal)}
           </span>
         </Link>
         <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
@@ -150,7 +154,7 @@ export default function DashboardFinancieroPage() {
             Fondo de emergencia
           </span>
           <span className="text-2xl font-semibold text-foreground">
-            ${objetivos.fondoEmergenciaActual.toLocaleString("es-AR")}
+            {fm(objetivos.fondoEmergenciaActual)}
           </span>
         </div>
       </div>
@@ -177,10 +181,7 @@ export default function DashboardFinancieroPage() {
                     borderRadius: 8,
                     fontSize: 12,
                   }}
-                  formatter={(value) => [
-                    `$${Number(value ?? 0).toLocaleString("es-AR")}`,
-                    "Ingresos",
-                  ]}
+                  formatter={(value) => [fm(Number(value ?? 0)), "Ingresos"]}
                 />
                 <Bar dataKey="monto" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -190,8 +191,8 @@ export default function DashboardFinancieroPage() {
 
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-5">
           <span className="text-sm font-medium text-foreground">Gastos por categoría</span>
-          <div className="flex items-center gap-4">
-            <div className="h-40 w-40 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="h-28 w-28 shrink-0 sm:h-40 sm:w-40">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -213,25 +214,20 @@ export default function DashboardFinancieroPage() {
                       borderRadius: 8,
                       fontSize: 12,
                     }}
-                    formatter={(value) => [
-                      `$${Number(value ?? 0).toLocaleString("es-AR")}`,
-                      "",
-                    ]}
+                    formatter={(value) => [fm(Number(value ?? 0)), ""]}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {top3.map((c, i) => (
                 <div key={c.categoria} className="flex items-center gap-2 text-xs">
                   <span
-                    className="size-2 rounded-full"
+                    className="size-2 shrink-0 rounded-full"
                     style={{ background: COLORES_DONUT[i % COLORES_DONUT.length] }}
                   />
-                  <span className="text-foreground">{c.categoria}</span>
-                  <span className="text-text-muted">
-                    ${c.monto.toLocaleString("es-AR")}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{c.categoria}</span>
+                  <span className="shrink-0 text-text-muted">{fm(c.monto)}</span>
                 </div>
               ))}
             </div>

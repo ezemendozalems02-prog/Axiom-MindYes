@@ -9,6 +9,7 @@ import { useNegocioStore } from "@/stores/negocio-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getHoyISO } from "@/lib/hoy";
+import { formatMonto } from "@/lib/finanzas";
 
 const ESTADO_COLOR: Record<EstadoIngreso, string> = {
   Confirmado: "bg-primary/15 text-primary",
@@ -20,6 +21,9 @@ export default function IngresosPage() {
   const ingresos = useFinanzasStore((s) => s.ingresos);
   const agregarIngreso = useFinanzasStore((s) => s.agregarIngreso);
   const clientes = useNegocioStore((s) => s.clientes);
+  const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
+  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
 
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("Honorarios");
@@ -53,18 +57,18 @@ export default function IngresosPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Ingresos</h1>
         <p className="text-sm text-text-secondary">
-          Total confirmado/cobrado: ${total.toLocaleString("es-AR")}
+          Total confirmado/cobrado: {fm(total)}
         </p>
       </div>
 
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-text-muted">Monto (USD)</label>
           <input
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
             type="number"
-            className="h-8 w-32 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-32"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -72,7 +76,7 @@ export default function IngresosPage() {
           <input
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            className="h-8 w-36 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-36"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -80,7 +84,7 @@ export default function IngresosPage() {
           <select
             value={clienteId}
             onChange={(e) => setClienteId(e.target.value)}
-            className="h-8 w-40 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-40"
           >
             <option value="">Sin cliente</option>
             {clientes.map((c) => (
@@ -90,7 +94,7 @@ export default function IngresosPage() {
             ))}
           </select>
         </div>
-        <Button size="sm" onClick={registrar}>
+        <Button size="sm" onClick={registrar} className="w-full sm:w-auto">
           <Plus data-icon="inline-start" />
           Registrar
         </Button>
@@ -102,17 +106,17 @@ export default function IngresosPage() {
           return (
             <div
               key={i.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-card px-4 py-3"
             >
-              <span className="w-24 text-xs text-text-muted">{i.fecha}</span>
-              <span className="flex-1 text-sm text-foreground">
+              <span className="w-20 shrink-0 text-xs text-text-muted sm:w-24">{i.fecha}</span>
+              <span className="order-last min-w-0 basis-full truncate text-sm text-foreground sm:order-none sm:flex-1 sm:basis-auto">
                 {i.categoria}
                 {cliente && ` · ${cliente.nombre}`}
                 {i.recurrente && " · recurrente"}
               </span>
               <Badge className={ESTADO_COLOR[i.estado]}>{i.estado}</Badge>
-              <span className="w-20 text-right text-sm font-medium text-foreground">
-                ${i.monto.toLocaleString("es-AR")}
+              <span className="ml-auto shrink-0 text-right text-sm font-medium text-foreground sm:ml-0 sm:w-20">
+                {fm(i.monto)}
               </span>
             </div>
           );

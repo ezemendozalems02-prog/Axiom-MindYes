@@ -1,7 +1,21 @@
-import type { Deuda, Gasto, Ingreso } from "@/types/finanzas";
+import type { Deuda, Gasto, Ingreso, Moneda } from "@/types/finanzas";
 import { getHoyISO } from "@/lib/hoy";
 
 export const VALOR_HORA_USD = 35;
+
+// Cotización de referencia (USD -> ARS) usada para convertir los montos,
+// que se cargan en USD, cuando el usuario elige ver Finanzas en pesos.
+export const COTIZACION_DOLAR_DEFAULT = 1450;
+
+export function convertirMonto(montoUSD: number, monedaDestino: Moneda, cotizacionDolar: number): number {
+  return monedaDestino === "ARS" ? montoUSD * cotizacionDolar : montoUSD;
+}
+
+export function formatMonto(montoUSD: number, monedaDestino: Moneda, cotizacionDolar: number): string {
+  const convertido = convertirMonto(montoUSD, monedaDestino, cotizacionDolar);
+  const prefijo = monedaDestino === "ARS" ? "$" : "US$";
+  return `${prefijo}${Math.round(convertido).toLocaleString("es-AR")}`;
+}
 
 export function mesDe(fechaISO: string): string {
   return fechaISO.slice(0, 7); // YYYY-MM

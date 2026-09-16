@@ -15,6 +15,7 @@ import {
   calcularRatioDeudaIngreso,
   calcularSaldoDeuda,
   calcularTotalDeudaPendiente,
+  formatMonto,
   mesDe,
   sumarIngresosDelMes,
 } from "@/lib/finanzas";
@@ -25,6 +26,9 @@ export default function DeudasPage() {
   const agregarDeuda = useFinanzasStore((s) => s.agregarDeuda);
   const registrarPagoDeuda = useFinanzasStore((s) => s.registrarPagoDeuda);
   const eliminarDeuda = useFinanzasStore((s) => s.eliminarDeuda);
+  const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
+  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
 
   const [nombre, setNombre] = useState("");
   const [acreedor, setAcreedor] = useState("");
@@ -86,7 +90,7 @@ export default function DeudasPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Deudas</h1>
         <p className="text-sm text-text-secondary">
-          Pendiente: ${deudaTotal.toLocaleString("es-AR")}
+          Pendiente: {fm(deudaTotal)}
           {ratioDeudaIngreso > 0 && ` · ${ratioDeudaIngreso}% de tu ingreso mensual va a cuotas`}
         </p>
       </div>
@@ -98,14 +102,14 @@ export default function DeudasPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card p-4">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-card p-4 sm:flex sm:flex-wrap sm:items-end sm:gap-2">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-text-muted">Nombre</label>
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Tarjeta Visa"
-            className="h-8 w-36 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-36"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -114,7 +118,7 @@ export default function DeudasPage() {
             value={acreedor}
             onChange={(e) => setAcreedor(e.target.value)}
             placeholder="Banco Galicia"
-            className="h-8 w-32 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-32"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -123,7 +127,7 @@ export default function DeudasPage() {
             value={montoOriginal}
             onChange={(e) => setMontoOriginal(e.target.value)}
             type="number"
-            className="h-8 w-28 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-28"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -132,7 +136,7 @@ export default function DeudasPage() {
             value={cuotaMensual}
             onChange={(e) => setCuotaMensual(e.target.value)}
             type="number"
-            className="h-8 w-24 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-24"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -141,7 +145,7 @@ export default function DeudasPage() {
             value={tasaInteresMensual}
             onChange={(e) => setTasaInteresMensual(e.target.value)}
             type="number"
-            className="h-8 w-24 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-24"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -152,10 +156,10 @@ export default function DeudasPage() {
             type="number"
             min={1}
             max={31}
-            className="h-8 w-20 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-20"
           />
         </div>
-        <Button size="sm" onClick={registrar}>
+        <Button size="sm" onClick={registrar} className="col-span-2 w-full sm:w-auto">
           <Plus data-icon="inline-start" />
           Agregar deuda
         </Button>
@@ -175,17 +179,17 @@ export default function DeudasPage() {
 
           return (
             <div key={d.id} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <CreditCard className="size-4 shrink-0 text-text-muted" />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground">{d.nombre}</span>
-                    <span className="text-xs text-text-muted">
-                      {d.acreedor || "Sin acreedor"} · cuota ${d.cuotaMensual.toLocaleString("es-AR")}
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium text-foreground">{d.nombre}</span>
+                    <span className="truncate text-xs text-text-muted">
+                      {d.acreedor || "Sin acreedor"} · cuota {fm(d.cuotaMensual)}
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                   <Badge
                     className={
                       vencida
@@ -211,22 +215,22 @@ export default function DeudasPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-secondary">Saldo pendiente</span>
                 <span className="font-medium text-foreground">
-                  ${saldo.toLocaleString("es-AR")} de ${d.montoOriginal.toLocaleString("es-AR")}
+                  {fm(saldo)} de {fm(d.montoOriginal)}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${progreso}%` }} />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                   value={montosPago[d.id] ?? ""}
                   onChange={(e) => setMontosPago((prev) => ({ ...prev, [d.id]: e.target.value }))}
                   type="number"
                   placeholder={`${d.cuotaMensual}`}
-                  className="h-8 w-28 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+                  className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-28"
                 />
-                <Button size="sm" variant="secondary" onClick={() => pagarCuota(d)}>
+                <Button size="sm" variant="secondary" onClick={() => pagarCuota(d)} className="w-full sm:w-auto">
                   Registrar pago
                 </Button>
               </div>
@@ -242,10 +246,10 @@ export default function DeudasPage() {
             {pagadas.map((d) => (
               <div
                 key={d.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-4 py-3"
               >
-                <span className="text-sm text-foreground">{d.nombre}</span>
-                <Badge className="bg-success/15 text-success">Pagada</Badge>
+                <span className="min-w-0 truncate text-sm text-foreground">{d.nombre}</span>
+                <Badge className="shrink-0 bg-success/15 text-success">Pagada</Badge>
               </div>
             ))}
           </div>

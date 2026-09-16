@@ -8,13 +8,16 @@ import { useFinanzasStore } from "@/stores/finanzas-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getHoyISO } from "@/lib/hoy";
-import { mesDe, sumarGastosDelMes } from "@/lib/finanzas";
+import { formatMonto, mesDe, sumarGastosDelMes } from "@/lib/finanzas";
 
 const PRESUPUESTO_MENSUAL = 1500;
 
 export default function GastosPage() {
   const gastos = useFinanzasStore((s) => s.gastos);
   const agregarGasto = useFinanzasStore((s) => s.agregarGasto);
+  const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
+  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
 
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("Variable");
@@ -46,8 +49,7 @@ export default function GastosPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">Gastos</h1>
         <p className="text-sm text-text-secondary">
-          Total del mes: ${totalMes.toLocaleString("es-AR")} de ${PRESUPUESTO_MENSUAL.toLocaleString("es-AR")}{" "}
-          presupuestados
+          Total del mes: {fm(totalMes)} de {fm(PRESUPUESTO_MENSUAL)} presupuestados
         </p>
       </div>
 
@@ -58,14 +60,14 @@ export default function GastosPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-text-muted">Monto (USD)</label>
           <input
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
             type="number"
-            className="h-8 w-32 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-32"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -73,7 +75,7 @@ export default function GastosPage() {
           <input
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            className="h-8 w-36 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-36"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -81,13 +83,13 @@ export default function GastosPage() {
           <select
             value={tipo}
             onChange={(e) => setTipo(e.target.value as TipoGasto)}
-            className="h-8 w-32 rounded-md border border-border bg-popover px-2 text-sm text-foreground"
+            className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm text-foreground sm:h-8 sm:w-32"
           >
             <option value="Fijo">Fijo</option>
             <option value="Variable">Variable</option>
           </select>
         </div>
-        <Button size="sm" onClick={registrar}>
+        <Button size="sm" onClick={registrar} className="w-full sm:w-auto">
           <Plus data-icon="inline-start" />
           Registrar
         </Button>
@@ -97,13 +99,15 @@ export default function GastosPage() {
         {ordenados.map((g) => (
           <div
             key={g.id}
-            className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-card px-4 py-3"
           >
-            <span className="w-24 text-xs text-text-muted">{g.fecha}</span>
-            <span className="flex-1 text-sm text-foreground">{g.categoria}</span>
+            <span className="w-20 shrink-0 text-xs text-text-muted sm:w-24">{g.fecha}</span>
+            <span className="order-last min-w-0 basis-full truncate text-sm text-foreground sm:order-none sm:flex-1 sm:basis-auto">
+              {g.categoria}
+            </span>
             <Badge variant="secondary">{g.tipo}</Badge>
-            <span className="w-20 text-right text-sm font-medium text-foreground">
-              ${g.monto.toLocaleString("es-AR")}
+            <span className="ml-auto shrink-0 text-right text-sm font-medium text-foreground sm:ml-0 sm:w-20">
+              {fm(g.monto)}
             </span>
           </div>
         ))}

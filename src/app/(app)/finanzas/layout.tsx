@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Topbar } from "@/components/layout/topbar";
+import { SelectorMoneda } from "@/components/finanzas/selector-moneda";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -24,10 +25,13 @@ export default function FinanzasLayout({
   return (
     <>
       <Topbar>
-        <span className="text-sm font-medium text-foreground">Finanzas</span>
+        <span className="shrink-0 text-sm font-medium text-foreground">Finanzas</span>
+        <div className="ml-auto">
+          <SelectorMoneda />
+        </div>
       </Topbar>
 
-      <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border px-5">
+      <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border px-3 sm:px-5">
         {TABS.map((tab) => {
           const active = pathname?.startsWith(tab.href);
           return (
@@ -35,7 +39,7 @@ export default function FinanzasLayout({
               key={tab.href}
               href={tab.href}
               className={cn(
-                "relative whitespace-nowrap px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-foreground",
+                "relative shrink-0 whitespace-nowrap px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-foreground",
                 active && "text-foreground"
               )}
             >

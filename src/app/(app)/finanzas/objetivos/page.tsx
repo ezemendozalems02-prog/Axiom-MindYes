@@ -5,7 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useFinanzasStore } from "@/stores/finanzas-store";
 import { getHoyISO } from "@/lib/hoy";
-import { mesDe, sumarGastosDelMes, sumarIngresosDelMes } from "@/lib/finanzas";
+import { formatMonto, mesDe, sumarGastosDelMes, sumarIngresosDelMes } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
 import { FormDialog, type CampoForm } from "@/components/ui/form-dialog";
 
@@ -25,18 +25,20 @@ function BarraObjetivo({
   label,
   actual,
   objetivo,
+  fm,
 }: {
   label: string;
   actual: number;
   objetivo: number;
+  fm: (monto: number) => string;
 }) {
   const pct = objetivo > 0 ? Math.min(100, Math.round((actual / objetivo) * 100)) : 0;
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-sm">
         <span className="text-foreground">{label}</span>
         <span className="text-text-secondary">
-          ${actual.toLocaleString("es-AR")} / ${objetivo.toLocaleString("es-AR")}
+          {fm(actual)} / {fm(objetivo)}
         </span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
@@ -53,6 +55,9 @@ export default function ObjetivosFinancierosPage() {
   const actualizarObjetivos = useFinanzasStore((s) => s.actualizarObjetivos);
   const agregarInversion = useFinanzasStore((s) => s.agregarInversion);
   const eliminarInversion = useFinanzasStore((s) => s.eliminarInversion);
+  const monedaVisualizacion = useFinanzasStore((s) => s.monedaVisualizacion);
+  const cotizacionDolar = useFinanzasStore((s) => s.cotizacionDolar);
+  const fm = (monto: number) => formatMonto(monto, monedaVisualizacion, cotizacionDolar);
 
   const [dialogObjetivosAbierto, setDialogObjetivosAbierto] = useState(false);
   const [dialogInversionAbierto, setDialogInversionAbierto] = useState(false);
@@ -66,14 +71,19 @@ export default function ObjetivosFinancierosPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold text-foreground">Objetivos Financieros</h1>
           <p className="text-sm text-text-secondary">
             Tu rumbo económico, no solo tu balance.
           </p>
         </div>
-        <Button size="sm" variant="secondary" onClick={() => setDialogObjetivosAbierto(true)}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setDialogObjetivosAbierto(true)}
+          className="w-full sm:w-auto"
+        >
           <Pencil data-icon="inline-start" />
           Editar objetivos
         </Button>
@@ -84,16 +94,19 @@ export default function ObjetivosFinancierosPage() {
           label="Ingreso mensual"
           actual={ingresosMes}
           objetivo={objetivos.ingresoMensualTarget}
+          fm={fm}
         />
         <BarraObjetivo
           label="Ahorro mensual"
           actual={ahorroMes}
           objetivo={objetivos.ahorroMensualTarget}
+          fm={fm}
         />
         <BarraObjetivo
           label="Fondo de emergencia"
           actual={objetivos.fondoEmergenciaActual}
           objetivo={objetivos.fondoEmergenciaTarget}
+          fm={fm}
         />
       </div>
 
@@ -113,10 +126,10 @@ export default function ObjetivosFinancierosPage() {
         )}
 
         {objetivos.inversiones.map((inv) => (
-          <div key={inv.id} className="flex items-center justify-between text-sm">
-            <span className="text-foreground">{inv.nombre}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-text-secondary">${inv.monto.toLocaleString("es-AR")}</span>
+          <div key={inv.id} className="flex items-center justify-between gap-2 text-sm">
+            <span className="min-w-0 truncate text-foreground">{inv.nombre}</span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="text-text-secondary">{fm(inv.monto)}</span>
               <button
                 onClick={() => eliminarInversion(inv.id)}
                 className="text-text-muted hover:text-destructive"
@@ -129,7 +142,7 @@ export default function ObjetivosFinancierosPage() {
         ))}
         <div className="flex items-center justify-between border-t border-border pt-2 text-sm font-medium">
           <span className="text-foreground">Total invertido</span>
-          <span className="text-foreground">${totalInversiones.toLocaleString("es-AR")}</span>
+          <span className="text-foreground">{fm(totalInversiones)}</span>
         </div>
       </div>
 
